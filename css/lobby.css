@@ -2038,6 +2038,17 @@ img { display: block; }
 .screen[data-s3="deck"] .promo-card[data-stack="0"] { --k: 0; --sy: 1; z-index: 3; }
 .screen[data-s3="deck"] .promo-card[data-stack="1"] { --k: 1; --sy: var(--sy1, 0.97); z-index: 2; }
 .screen[data-s3="deck"] .promo-card[data-stack="hidden"] { z-index: 0; opacity: 0; visibility: hidden; }
+/* Vertical variant (Figma "launchpad state3 - alt01.1" 7209:60342, data-deck-dir="v"): the cards behind
+   peek out below instead of to the right — each 10.67px lower and narrower (inset 12 / 36px each side,
+   as a horizontal scale). The top card is the full 386px width and 21.33px shorter than the list. */
+.screen[data-s3="deck"][data-deck-dir="v"] .promo-list > .promo-card {
+  --sx: calc(314 / 386);
+  bottom: 21.333px;
+  width: 386px;
+  transform: translateY(calc(var(--k) * 10.667px)) scaleX(var(--sx));
+}
+.screen[data-s3="deck"][data-deck-dir="v"] .promo-card[data-stack="0"] { --sx: 1; }
+.screen[data-s3="deck"][data-deck-dir="v"] .promo-card[data-stack="1"] { --sx: calc(362 / 386); }
 /* Black cover over the cards behind (no content shows, no blur needed under it); it fades out quickly
    once a card reaches the top, so its content appears as it settles */
 .screen[data-s3="deck"] .promo-card::before {
@@ -2057,10 +2068,14 @@ img { display: block; }
 .screen[data-s3="deck"] .promo-card.is-revealing::before { opacity: var(--cover, 1); transition: opacity 0.2s ease; }
 .screen[data-s3="deck"] .promo-card.is-following,
 .screen[data-s3="deck"] .promo-card.is-following::before { transition: none; }
-.screen[data-s3="deck"] .promo-card:not([data-stack="0"]) { -webkit-backdrop-filter: none; backdrop-filter: none; }
+.screen[data-s3="deck"] .promo-card:not([data-stack="0"]):not(.is-incoming) { -webkit-backdrop-filter: none; backdrop-filter: none; }
+/* Swipe right: the previous top card comes back from the back of the deck, uncovered, above the rest */
+.screen[data-s3="deck"] .promo-card.is-incoming { z-index: 4; opacity: 1; visibility: visible; }
+.screen[data-s3="deck"] .promo-card.is-incoming::before { opacity: 0; }
 .screen[data-s3="deck"] .promo-card::after { z-index: 5; }   /* gold stroke stays on top of the cover */
 .screen[data-s3="deck"] .promo-card.is-swiping { transition: none; user-select: none; }
 .screen[data-s3="deck"] .promo-card.is-flying { transition: transform 0.25s cubic-bezier(0.4, 0, 1, 1); }
+.screen[data-s3="deck"] .promo-card.is-incoming.is-flying { transition: transform 0.25s cubic-bezier(0, 0, 0.2, 1); }   /* lands, easing out */
 .screen[data-s3="deck"] .promo-card.no-anim,
 .screen[data-s3="deck"] .promo-card.no-anim::before { transition: none; }
 

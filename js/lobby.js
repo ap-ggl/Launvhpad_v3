@@ -988,13 +988,15 @@ document.querySelectorAll('.promo-card').forEach(function promoAccordion(card) {
   // Swallow the click that ends a drag so it doesn't open a section or press a button
   list.addEventListener('click', e => { if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; } }, true);
 
-  // Card stack swipe: the top card follows a horizontal drag (touch, pen or mouse); vertical drags are
-  // left alone so the card's own lists still scroll. The cards underneath follow the drag distance:
-  // at half the card width out (p = 1) the next card has grown into the top position and its content
-  // has fully faded in, and the card behind it has moved up one place. They move by transform only
-  // (no relayout while dragging). Past the threshold the top card flies off and the deck advances;
-  // shorter drags spring back.
-  const FLY_MS = 250, THRESHOLD = 80;   // keep FLY_MS in sync with .is-flying (css)
+  // Card stack swipe (touch, pen or mouse); vertical drags are left alone so the card's own lists still
+  // scroll. Everything is tied to the drag distance: p = 0 → 1 over half the card width, by transform
+  // only (no relayout while dragging). Past the threshold the move completes; shorter drags spring back.
+  //   Left:  the top card follows the finger out to the left; the cards underneath move up one place
+  //          and the next card's content fades in. The old top card goes to the back of the deck.
+  //   Right: the exact reverse. The previous top card (at the back) comes back in from the left;
+  //          the top card and the one behind it move down one place, the top card's content is covered
+  //          again, and the third card fades out to the back.
+  const FLY_MS = 250, THRESHOLD = 80, OFF = 460;   // keep FLY_MS in sync with .is-flying (css)
   let deckDrag = null, flying = false, swallow = false;
   // Deck scales: the cards behind are the full height scaled down to Figma's 12px / 36px insets
   let sy1 = 1, sy2 = 1;
@@ -1008,14 +1010,27 @@ document.querySelectorAll('.promo-card').forEach(function promoAccordion(card) {
   new ResizeObserver(measureDeck).observe(list);
   measureDeck();
   const lerp = (a, b, p) => a + (b - a) * p;
+  // Deck positions 0–2 as transforms: horizontal = cards behind to the right (scaled shorter),
+  // vertical (data-deck-dir="v") = cards behind below (scaled narrower). Match the css.
+  const TX = [0, 10, 20], SY = () => [1, sy1, sy2];
+  const TY = [0, 10.667, 21.333], SX = [1, 362 / 386, 314 / 386];
+  const between = (from, to, p) => scr.dataset.deckDir === 'v'
+    ? `translateY(${lerp(TY[from], TY[to], p)}px) scaleX(${lerp(SX[from], SX[to], p)})`
+    : `translateX(${lerp(TX[from], TX[to], p)}px) scaleY(${lerp(SY()[from], SY()[to], p)})`;
+  const offLeft = x => `translateX(${x}px) rotate(${x / 33}deg)`;   // the swiped-away card, left of the deck
   const follow = (d, p) => {
-    if (d.next) {   // stack 1 → 0
-      d.next.style.transform = `translateX(${lerp(10, 0, p)}px) scaleY(${lerp(sy1, 1, p)})`;
-      d.next.style.setProperty('--cover', String(1 - p));
+    if (d.mode === 'next') {
+      if (d.next) { d.next.style.transform = between(1, 0, p); d.next.style.setProperty('--cover', String(1 - p)); }
+      if (d.third) d.third.style.transform = between(2, 1, p);
+    } else {
+      d.prev.style.transform = offLeft(lerp(-OFF, 0, p));
+      d.top.style.transform = between(0, 1, p);
+      d.top.style.setProperty('--cover', String(p));
+      if (d.next) d.next.style.transform = between(1, 2, p);
+      if (d.third) d.third.style.opacity = String(1 - p);
     }
-    if (d.third) d.third.style.transform = `translateX(${lerp(20, 10, p)}px) scaleY(${lerp(sy2, sy1, p)})`;   // 2 → 1
   };
-  const underneath = d => [d.next, d.third].filter(Boolean);
+  const involved = d => [d.top, d.prev, d.next, d.third].filter(Boolean);
   list.addEventListener('pointerdown', e => {
     if (!isDeck() || flying || (e.pointerType === 'mouse' && e.button !== 0)) return;
     const top = cards[current];
@@ -1027,17 +1042,24 @@ document.querySelectorAll('.promo-card').forEach(function promoAccordion(card) {
     const d = deckDrag, dx = e.clientX - d.x, dy = e.clientY - d.y;
     if (!d.active) {
       if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
-      if (Math.abs(dy) > Math.abs(dx)) { deckDrag = null; return; }   // vertical: not a swipe
+      if (Math.abs(dy) > Math.abs(dx) || cards.length < 4) { deckDrag = null; return; }   // vertical: not a swipe
       d.active = true;
-      d.top.classList.add('is-swiping');
-      const at = k => cards.length > k ? cards[(current + k) % cards.length] : null;
+      d.mode = dx < 0 ? 'next' : 'prev';   // direction is fixed for the rest of the drag
+      const at = k => cards[(current + k + cards.length) % cards.length];
       d.next = at(1); d.third = at(2);
-      d.next?.classList.add('is-revealing');
-      underneath(d).forEach(c => c.classList.add('is-following'));
+      if (d.mode === 'next') {
+        d.top.classList.add('is-swiping');
+        d.next.classList.add('is-revealing');
+      } else {
+        d.prev = at(-1);
+        d.prev.classList.add('is-incoming');
+        d.top.classList.add('is-revealing');
+      }
+      involved(d).forEach(c => c.classList.add('is-following'));
     }
-    d.dx = dx;
-    d.top.style.transform = `translateX(${dx}px) rotate(${dx / 40}deg)`;
-    follow(d, Math.min(1, Math.abs(dx) / (d.top.offsetWidth / 2)));
+    d.dx = d.mode === 'next' ? Math.min(0, dx) : Math.max(0, dx);
+    if (d.mode === 'next') d.top.style.transform = `translateX(${d.dx}px) rotate(${d.dx / 40}deg)`;
+    follow(d, Math.min(1, Math.abs(d.dx) / (d.top.offsetWidth / 2)));
   });
   const deckRelease = () => {
     if (!deckDrag) return;
@@ -1045,50 +1067,63 @@ document.querySelectorAll('.promo-card').forEach(function promoAccordion(card) {
     deckDrag = null;
     if (!d.active) return;
     swallow = true;
-    d.top.classList.remove('is-swiping');
-    underneath(d).forEach(c => c.classList.remove('is-following'));   // transitions back on for the rest
-    if (Math.abs(d.dx) < THRESHOLD) {   // spring back: everything returns to its place, the cover fades back
-      d.top.style.transform = '';
-      underneath(d).forEach(c => { c.style.transform = ''; c.style.removeProperty('--cover'); });
-      d.next?.classList.remove('is-revealing');
-      return;
-    }
-    const dir = Math.sign(d.dx);
-    flying = true;
-    d.top.classList.add('is-flying');
-    d.top.style.transform = `translateX(${dir * 460}px) rotate(${dir * 14}deg)`;
-    follow(d, 1);   // the cards underneath finish moving up while the top card flies off
-    setTimeout(() => {
-      // Swap the transforms for the real deck positions in one frame (same geometry, no jump), and send
-      // the old top card straight to the back, hidden
-      const moved = [d.top, ...underneath(d)];
-      moved.forEach(c => { c.classList.add('no-anim'); c.style.transform = ''; c.style.removeProperty('--cover'); });
-      d.top.classList.remove('is-flying');
-      d.next?.classList.remove('is-revealing');
-      select((current + 1) % cards.length, false);
-      resetCard(d.top);
+    const cs = involved(d);
+    cs.forEach(c => c.classList.remove('is-following', 'is-swiping'));   // transitions back on for the rest
+    const clear = c => { c.style.transform = ''; c.style.opacity = ''; c.style.removeProperty('--cover'); };
+    const finish = (after) => setTimeout(() => {
+      // Swap the transforms for the real deck positions in one frame (same geometry, no jump)
+      cs.forEach(c => { c.classList.add('no-anim'); clear(c); c.classList.remove('is-flying', 'is-revealing', 'is-incoming'); });
+      after();
       void d.top.offsetWidth;
-      moved.forEach(c => c.classList.remove('no-anim'));
+      cs.forEach(c => c.classList.remove('no-anim'));
       flying = false;
     }, FLY_MS);
+    flying = true;
+    if (Math.abs(d.dx) < THRESHOLD) {   // spring back: everything returns to its place
+      if (d.mode === 'prev') {   // the incoming card slides back out to the left, then hides again
+        d.prev.classList.add('is-flying');
+        d.prev.style.transform = offLeft(-OFF);
+        [d.top, d.next, d.third].forEach(c => c && clear(c));
+        finish(() => {});
+      } else {
+        cs.forEach(clear);
+        d.next.classList.remove('is-revealing');
+        flying = false;
+      }
+      return;
+    }
+    if (d.mode === 'next') {   // top card flies off left; the old top card goes to the back, hidden
+      d.top.classList.add('is-flying');
+      d.top.style.transform = offLeft(-OFF);
+      follow(d, 1);
+      finish(() => { select((current + 1) % cards.length, false); resetCard(d.top); });
+    } else {                   // previous card lands on top; the others settle one place down
+      d.prev.classList.add('is-flying');
+      follow(d, 1);
+      d.prev.style.transform = offLeft(0);
+      finish(() => { select((current - 1 + cards.length) % cards.length, false); resetCard(d.top); });
+    }
   };
   window.addEventListener('pointerup', deckRelease);
   window.addEventListener('pointercancel', deckRelease);
   list.addEventListener('click', e => { if (swallow) { e.stopPropagation(); e.preventDefault(); swallow = false; } }, true);
   list.addEventListener('pointerdown', () => { swallow = false; }, true);
 
-  // Full view option (prototype control, ?s3=deck): Tabs (default) or Card stack
+  // Full view option (prototype control, ?s3=deck | deck-v): Tabs (default), Card stack, or Card stack
+  // laid out vertically (same deck and swipe, cards behind peek out below)
   const viewRadios = [...document.querySelectorAll('input[name="s3-view"]')];
   const setView = v => {
     if (!scr) return;
-    scr.dataset.s3 = v;
+    scr.dataset.s3 = v === 'tabs' ? 'tabs' : 'deck';
+    scr.dataset.deckDir = v === 'deck-v' ? 'v' : 'h';
     viewRadios.forEach(r => { r.checked = r.value === v; });
     cards.forEach(c => { c.style.transform = ''; c.classList.remove('is-swiping', 'is-flying'); });
     select(current, false);
     dock();
   };
   viewRadios.forEach(r => r.addEventListener('change', () => setView(r.value)));
-  setView(new URLSearchParams(location.search).get('s3') === 'deck' ? 'deck' : 'tabs');
+  const s3Param = new URLSearchParams(location.search).get('s3');
+  setView(['deck', 'deck-v'].includes(s3Param) ? s3Param : 'tabs');
 })();
 
 // Mobile (≤ 700px): scale the 402px-wide screen to the viewport width and give it an unscaled
