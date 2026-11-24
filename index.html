@@ -486,6 +486,9 @@
           </div>
         </div>
 
+        <!-- Card stack view only: one dot per card, the top card's dot stretched (Figma 7199:13034) -->
+        <div class="deck-dots" aria-hidden="true" data-node-id="7199:13034"></div>
+
         <nav class="tabbar" aria-label="Launchpad" data-node-id="5908:196085">
           <!-- Selected tab's docked shape (not in Figma; from a reference image): drawn here, centred under
                the card, so it can flare into the card's edge. Fixed 104×84 geometry — see css/lobby.css .tab-dock -->
@@ -572,6 +575,12 @@
       <label class="proto-radio" data-type="floating"><input type="radio" name="lp-state" value="hidden"> Hidden</label>
       <label class="proto-radio" data-type="floating"><input type="radio" name="lp-state" value="small" checked> Small</label>
       <label class="proto-radio" data-type="floating"><input type="radio" name="lp-state" value="3"> Full</label>
+    </fieldset>
+
+    <fieldset class="proto-radios">
+      <legend class="proto-controls__label">Full view</legend>
+      <label class="proto-radio"><input type="radio" name="s3-view" value="tabs" checked> Tabs</label>
+      <label class="proto-radio"><input type="radio" name="s3-view" value="deck"> Card stack</label>
     </fieldset>
 
     <fieldset class="proto-radios">

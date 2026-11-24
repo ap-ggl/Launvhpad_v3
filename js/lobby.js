@@ -729,6 +729,21 @@ document.querySelectorAll('.promo-card').forEach(function promoAccordion(card) {
   if (!list || !tabs.length) return;
   const cards = [...list.children];
   let title = null, titleText = null, marquee;
+  // Full view "Card stack" (Figma "launchpad state3 - alt01" 7197:5672): data-s3="deck" on the screen.
+  // The same cards form an endless deck instead of a side-by-side list; no tab bar.
+  const scr = document.querySelector('.screen');
+  const isDeck = () => scr?.dataset.s3 === 'deck';
+  const dots = document.querySelector('.deck-dots');
+  cards.forEach(() => dots?.append(document.createElement('i')));
+  // Deck position of each card relative to the top one: 0 = top, 1–2 peek out behind it, the rest wait
+  // hidden at the back. Swiping always advances, so the old top card becomes the last one.
+  const layoutDeck = () => {
+    cards.forEach((c, k) => {
+      const pos = (k - current + cards.length) % cards.length;
+      c.dataset.stack = pos < 3 ? pos : 'hidden';
+    });
+    dots?.querySelectorAll('i').forEach((d, k) => d.classList.toggle('is-active', k === current));
+  };
 
   // The selected card's title bar: titles too long for it scroll slowly to the end, pause, then
   // quickly fade out, jump back to the start and fade in, pause, and repeat. Only the selected card's
@@ -788,8 +803,10 @@ document.querySelectorAll('.promo-card').forEach(function promoAccordion(card) {
     });
     cards.forEach((c, k) => { c.inert = k !== i; });
     setTitle(cards[i]);
-    // Card's left edge lines up with the list's 8px side padding
-    if (scrollList) list.scrollTo({ left: cardLeft(i), behavior });
+    layoutDeck();
+    // Card's left edge lines up with the list's 8px side padding (the deck doesn't scroll)
+    if (isDeck()) list.scrollLeft = 0;
+    else if (scrollList) list.scrollTo({ left: cardLeft(i), behavior });
     const left = tabCentre(i) - strip.clientWidth / 2;
     if (behavior === 'smooth' && Math.abs(left - strip.scrollLeft) > 1) autoScroll = true;
     strip.scrollTo({ left, behavior });
@@ -823,7 +840,7 @@ document.querySelectorAll('.promo-card').forEach(function promoAccordion(card) {
   };
   const dock = () => {
     const near = (a, b) => Math.abs(a - b) < 2;
-    setDocked(!touching && !dragging && !stripDrag
+    setDocked(!isDeck() && !touching && !dragging && !stripDrag
       && near(list.scrollLeft, cardLeft(current)) && near(strip.scrollLeft, tabCentre(current) - strip.clientWidth / 2));
   };
   let autoScroll = false;
@@ -842,7 +859,7 @@ document.querySelectorAll('.promo-card').forEach(function promoAccordion(card) {
   };
   let stripDrag = false, stripMoved = false, stripX = 0, stripScroll = 0, stripTimer;
   const settleStrip = () => {
-    if (stripDrag) return;
+    if (stripDrag || isDeck()) return;   // the strip is hidden in the card stack view
     autoScroll = false;
     const k = nearestTab();
     if (k !== current) select(k); else { markCentre(k); realign(); }
@@ -919,7 +936,7 @@ document.querySelectorAll('.promo-card').forEach(function promoAccordion(card) {
   // Swipe settle → select the centred card's tab/title (list is already snapped there)
   let dragging = false, releasing = false, settleTimer;
   const settle = () => {
-    if (dragging) return;
+    if (dragging || isDeck()) return;
     if (releasing) { releasing = false; list.classList.remove('is-dragging'); }   // re-enable snap after the drag's glide
     const i = nearest();
     if (i !== current) select(i, true, false); else realign();
@@ -936,7 +953,7 @@ document.querySelectorAll('.promo-card').forEach(function promoAccordion(card) {
   // go to the nearest card, or the next one in the drag direction after a > 50px flick.
   let startX = 0, lastX = 0, startScroll = 0, startIndex = 0, moved = false;
   list.addEventListener('pointerdown', e => {
-    if (e.pointerType !== 'mouse' || e.button !== 0) return;
+    if (e.pointerType !== 'mouse' || e.button !== 0 || isDeck()) return;
     if (e.target.closest('.jp-games__list')) return;   // jackpot game rows drag-scroll themselves
     dragging = true; moved = false;
     startX = lastX = e.clientX; startScroll = list.scrollLeft;
@@ -970,6 +987,108 @@ document.querySelectorAll('.promo-card').forEach(function promoAccordion(card) {
   list.addEventListener('dragstart', e => e.preventDefault());
   // Swallow the click that ends a drag so it doesn't open a section or press a button
   list.addEventListener('click', e => { if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; } }, true);
+
+  // Card stack swipe: the top card follows a horizontal drag (touch, pen or mouse); vertical drags are
+  // left alone so the card's own lists still scroll. The cards underneath follow the drag distance:
+  // at half the card width out (p = 1) the next card has grown into the top position and its content
+  // has fully faded in, and the card behind it has moved up one place. They move by transform only
+  // (no relayout while dragging). Past the threshold the top card flies off and the deck advances;
+  // shorter drags spring back.
+  const FLY_MS = 250, THRESHOLD = 80;   // keep FLY_MS in sync with .is-flying (css)
+  let deckDrag = null, flying = false, swallow = false;
+  // Deck scales: the cards behind are the full height scaled down to Figma's 12px / 36px insets
+  let sy1 = 1, sy2 = 1;
+  const measureDeck = () => {
+    const h = list.clientHeight;
+    if (!h) return;
+    sy1 = (h - 24) / h; sy2 = (h - 72) / h;
+    list.style.setProperty('--sy1', sy1);
+    list.style.setProperty('--sy2', sy2);
+  };
+  new ResizeObserver(measureDeck).observe(list);
+  measureDeck();
+  const lerp = (a, b, p) => a + (b - a) * p;
+  const follow = (d, p) => {
+    if (d.next) {   // stack 1 → 0
+      d.next.style.transform = `translateX(${lerp(10, 0, p)}px) scaleY(${lerp(sy1, 1, p)})`;
+      d.next.style.setProperty('--cover', String(1 - p));
+    }
+    if (d.third) d.third.style.transform = `translateX(${lerp(20, 10, p)}px) scaleY(${lerp(sy2, sy1, p)})`;   // 2 → 1
+  };
+  const underneath = d => [d.next, d.third].filter(Boolean);
+  list.addEventListener('pointerdown', e => {
+    if (!isDeck() || flying || (e.pointerType === 'mouse' && e.button !== 0)) return;
+    const top = cards[current];
+    if (!top.contains(e.target) || e.target.closest('.jp-games__list')) return;
+    deckDrag = { top, x: e.clientX, y: e.clientY, dx: 0, active: false };
+  });
+  window.addEventListener('pointermove', e => {
+    if (!deckDrag) return;
+    const d = deckDrag, dx = e.clientX - d.x, dy = e.clientY - d.y;
+    if (!d.active) {
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+      if (Math.abs(dy) > Math.abs(dx)) { deckDrag = null; return; }   // vertical: not a swipe
+      d.active = true;
+      d.top.classList.add('is-swiping');
+      const at = k => cards.length > k ? cards[(current + k) % cards.length] : null;
+      d.next = at(1); d.third = at(2);
+      d.next?.classList.add('is-revealing');
+      underneath(d).forEach(c => c.classList.add('is-following'));
+    }
+    d.dx = dx;
+    d.top.style.transform = `translateX(${dx}px) rotate(${dx / 40}deg)`;
+    follow(d, Math.min(1, Math.abs(dx) / (d.top.offsetWidth / 2)));
+  });
+  const deckRelease = () => {
+    if (!deckDrag) return;
+    const d = deckDrag;
+    deckDrag = null;
+    if (!d.active) return;
+    swallow = true;
+    d.top.classList.remove('is-swiping');
+    underneath(d).forEach(c => c.classList.remove('is-following'));   // transitions back on for the rest
+    if (Math.abs(d.dx) < THRESHOLD) {   // spring back: everything returns to its place, the cover fades back
+      d.top.style.transform = '';
+      underneath(d).forEach(c => { c.style.transform = ''; c.style.removeProperty('--cover'); });
+      d.next?.classList.remove('is-revealing');
+      return;
+    }
+    const dir = Math.sign(d.dx);
+    flying = true;
+    d.top.classList.add('is-flying');
+    d.top.style.transform = `translateX(${dir * 460}px) rotate(${dir * 14}deg)`;
+    follow(d, 1);   // the cards underneath finish moving up while the top card flies off
+    setTimeout(() => {
+      // Swap the transforms for the real deck positions in one frame (same geometry, no jump), and send
+      // the old top card straight to the back, hidden
+      const moved = [d.top, ...underneath(d)];
+      moved.forEach(c => { c.classList.add('no-anim'); c.style.transform = ''; c.style.removeProperty('--cover'); });
+      d.top.classList.remove('is-flying');
+      d.next?.classList.remove('is-revealing');
+      select((current + 1) % cards.length, false);
+      resetCard(d.top);
+      void d.top.offsetWidth;
+      moved.forEach(c => c.classList.remove('no-anim'));
+      flying = false;
+    }, FLY_MS);
+  };
+  window.addEventListener('pointerup', deckRelease);
+  window.addEventListener('pointercancel', deckRelease);
+  list.addEventListener('click', e => { if (swallow) { e.stopPropagation(); e.preventDefault(); swallow = false; } }, true);
+  list.addEventListener('pointerdown', () => { swallow = false; }, true);
+
+  // Full view option (prototype control, ?s3=deck): Tabs (default) or Card stack
+  const viewRadios = [...document.querySelectorAll('input[name="s3-view"]')];
+  const setView = v => {
+    if (!scr) return;
+    scr.dataset.s3 = v;
+    viewRadios.forEach(r => { r.checked = r.value === v; });
+    cards.forEach(c => { c.style.transform = ''; c.classList.remove('is-swiping', 'is-flying'); });
+    select(current, false);
+    dock();
+  };
+  viewRadios.forEach(r => r.addEventListener('change', () => setView(r.value)));
+  setView(new URLSearchParams(location.search).get('s3') === 'deck' ? 'deck' : 'tabs');
 })();
 
 // Mobile (≤ 700px): scale the 402px-wide screen to the viewport width and give it an unscaled

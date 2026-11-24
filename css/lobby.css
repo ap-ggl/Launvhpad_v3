@@ -1998,6 +1998,90 @@ img { display: block; }
   scroll-snap-align: center;
   scroll-snap-stop: always;   /* one card per swipe */
 }
+
+/* ---------- Full view "Card stack" (Figma "launchpad state3 - alt01" 7197:5672, data-s3="deck") ----------
+   No tab bar; the overlay fills the game area (12px above and below the content). The top card is
+   370px wide; the next two peek out to its right, each 10px further over and shorter (inset 12 / 36px
+   top and bottom), covered in black. The rest wait hidden at the back. js/lobby.js tabCards sets
+   data-stack (0 = top) and handles the swipe. Every card keeps the full height; the shorter cards
+   behind are a vertical scale (--sy1 / --sy2, set by js from the list height), so a card's content is
+   never re-laid out when it moves up — it just scales into place. Figma shows two cards behind; a third wouldn't fit the
+   402px width at the same 10px step. */
+.screen[data-s3="deck"] .tabbar { display: none; }
+.screen[data-s3="deck"][data-lp-state="3"] .overlay { height: 100%; }
+.screen[data-s3="deck"] .overlay__s3 {
+  height: 100cqh;
+  gap: 8px;
+  padding: 12px 0;
+}
+.screen[data-s3="deck"] .promo-list {
+  position: relative;
+  display: block;
+  padding: 0;
+  overflow: hidden;
+  scroll-snap-type: none;
+  touch-action: pan-y;   /* horizontal drags are the deck swipe (js) */
+}
+.screen[data-s3="deck"] .promo-list > .promo-card {
+  --k: 2;
+  --sy: var(--sy2, 0.91);
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 8px;
+  width: 370px;
+  height: auto;
+  z-index: 1;
+  transform: translateX(calc(var(--k) * 10px)) scaleY(var(--sy));
+  transition: opacity 0.2s ease, transform 0.25s var(--acc-ease);
+}
+.screen[data-s3="deck"] .promo-card[data-stack="0"] { --k: 0; --sy: 1; z-index: 3; }
+.screen[data-s3="deck"] .promo-card[data-stack="1"] { --k: 1; --sy: var(--sy1, 0.97); z-index: 2; }
+.screen[data-s3="deck"] .promo-card[data-stack="hidden"] { z-index: 0; opacity: 0; visibility: hidden; }
+/* Black cover over the cards behind (no content shows, no blur needed under it); it fades out quickly
+   once a card reaches the top, so its content appears as it settles */
+.screen[data-s3="deck"] .promo-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  border-radius: inherit;
+  background: var(--black);
+  pointer-events: none;
+  transition: opacity 0.15s ease 0.12s;
+}
+.screen[data-s3="deck"] .promo-card[data-stack="0"]::before { opacity: 0; }
+/* …and while the top card is dragged, the card underneath uncovers in step with the drag (--cover set
+   by the js deck swipe: 1 = covered, 0 = at half the card width out). is-following turns transitions
+   off so the cards track the finger; on release they're back on for the spring-back / move-up. */
+.screen[data-s3="deck"] .promo-card.is-revealing::before { opacity: var(--cover, 1); transition: opacity 0.2s ease; }
+.screen[data-s3="deck"] .promo-card.is-following,
+.screen[data-s3="deck"] .promo-card.is-following::before { transition: none; }
+.screen[data-s3="deck"] .promo-card:not([data-stack="0"]) { -webkit-backdrop-filter: none; backdrop-filter: none; }
+.screen[data-s3="deck"] .promo-card::after { z-index: 5; }   /* gold stroke stays on top of the cover */
+.screen[data-s3="deck"] .promo-card.is-swiping { transition: none; user-select: none; }
+.screen[data-s3="deck"] .promo-card.is-flying { transition: transform 0.25s cubic-bezier(0.4, 0, 1, 1); }
+.screen[data-s3="deck"] .promo-card.no-anim,
+.screen[data-s3="deck"] .promo-card.no-anim::before { transition: none; }
+
+/* Dots under the deck: 8px, 10px apart; the top card's dot is a 61px pill */
+.deck-dots { display: none; }
+.screen[data-s3="deck"] .deck-dots {
+  flex: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  height: 8px;
+}
+.deck-dots i {
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--neutral);
+  transition: width 0.25s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+.deck-dots i.is-active { width: 61px; }
 .tab__dot {
   transition: translate 0.15s ease;
   position: absolute;
