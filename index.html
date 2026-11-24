@@ -1,0 +1,611 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- iPhone has no Fullscreen API for pages; launched from the Home Screen it opens without browser bars -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Launchpad">
+  <title>Launchpad v3 – Prototype</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400&family=Roboto:wght@300;400;500;700;900&display=swap">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/lobby.css">
+</head>
+<body>
+  <!-- Mobile only: floating menu button that opens the prototype controls drawer -->
+  <button class="proto-menu-btn" type="button" id="proto-menu-btn" aria-label="Prototype controls" aria-expanded="false" aria-controls="proto-menu">
+    <span></span><span></span><span></span>
+  </button>
+
+  <div class="stage">
+  <!-- Figma: "full - promo - raffle" (5908:195948), 402×874 -->
+  <main class="screen" data-node-id="5908:195948">
+
+    <!-- Safari / iOS chrome (toggled together by the "Safari" switch) -->
+    <div class="safari-bar status-bar" aria-hidden="true" data-node-id="5908:195950">
+      <div class="status-bar__inner">
+        <span class="status-bar__time">9:41</span>
+        <span class="status-bar__island"></span>
+        <img class="status-bar__icons" src="assets/safari/status-icons.svg" width="77.9893" height="13" alt="">
+      </div>
+    </div>
+
+    <div class="safari-bar url-bar" aria-hidden="true" data-node-id="5908:195951">
+      <div class="url-bar__field glass-pill" data-node-id="5908:195952">
+        <img class="url-bar__menu" src="assets/safari/menu.svg" width="16.3008" height="11.8008" alt="">
+        <span class="url-bar__url">launchpad.com</span>
+        <img class="url-bar__reload" src="assets/safari/reload.svg" width="14.9568" height="18.1824" alt="">
+      </div>
+    </div>
+
+    <div class="titan-bar" data-node-id="5908:195954">
+      <div class="titan-bar__dots" aria-hidden="true"><span></span><span></span><span></span></div>
+      <span class="titan-bar__clock" id="clock">12:00</span>
+    </div>
+
+    <div class="jackpot" data-node-id="5908:195960">
+      <img src="assets/jackpot-madness.png" alt="Jackpot Madness – Mania € 30,61">
+    </div>
+
+    <section class="game-area" data-node-id="5908:195962">
+      <img class="game-area__game" id="game-texture" src="assets/games/amazing-link-bounty-wanted.png" alt="" data-node-id="5908:195964">
+
+      <!-- Launchpad: one element that morphs between states (data-lp-state on .screen).
+           Stage1 = 5908:195965 (28px strip), Stage3 = 5908:195986 (full promo overlay). -->
+      <div class="overlay" data-node-id="5908:195986">
+        <div class="overlay__bg overlay__bg--s3" aria-hidden="true"></div>
+        <div class="overlay__bg overlay__bg--s1" aria-hidden="true"></div>
+        <div class="overlay__bg overlay__bg--s2" aria-hidden="true"></div>
+        <div class="overlay__bg overlay__bg--s0" aria-hidden="true"></div>
+
+        <!-- Dropdown Hidden (State 0, Figma Launchpad_Hidden 5908:195965): 38×28 tab, tap → State 1 -->
+        <button class="overlay__s0" type="button" aria-label="Show launchpad" data-node-id="5908:195965">
+          <img src="assets/icons/chevron-down-22.svg" width="22" height="22" alt="">
+        </button>
+
+        <!-- State 2 (Figma Launchpad_Stage2 5908:195968, 394×62): raffle tickets banner. Pops in for the
+             "Grant Ticket" trigger (js/lobby.js grantTicket); tap → State 3 on the Raffles card. -->
+        <button class="overlay__s2" type="button" aria-label="Open Super Raffles" data-node-id="5908:195968">
+          <span class="s2-bg" aria-hidden="true"><img src="assets/promo-banner-bg-2.jpg" alt=""></span>
+          <span class="s2-win" aria-hidden="true" data-node-id="7188:52450"></span>
+          <span class="s2-row" aria-hidden="true">
+            <span class="s2-logo" data-node-id="7188:52398"><img src="assets/floating/logo-rewards-burst.svg" alt=""></span>
+            <span class="s2-info" data-node-id="7188:52452"><strong class="s2-count"></strong><span>TICKETS</span></span>
+            <span class="s2-icon theme-ico" data-icon="raffles" data-node-id="5908:195984"></span>
+          </span>
+          <span class="s2-fx" aria-hidden="true"></span>
+        </button>
+
+        <!-- State 1: collapsed strip (Figma Launchpad_Stage1 7188:52200) — tap to open State 3 on the shown
+             promo's card; the ✕ at the left hides it (State 0, separate button laid over the strip).
+             One message per promo card (campaign name + its key stat + icon), cycling every 4s like the
+             Floating Small summaries (js/lobby.js); numbers are copied from the card's stats cell (data-stat). -->
+        <button class="overlay__s1" type="button" aria-label="Open Rewards Burst" data-promo="rb" data-node-id="7188:52200">
+          <span class="s1-bg" aria-hidden="true">
+            <img data-promo="rb" src="assets/promo-banner-bg-2.jpg" alt="">
+            <img data-promo="zgt" src="assets/promo-banner-bg-1.jpg" alt="">
+          </span>
+          <span class="s1-msg is-shown" data-card="promo-raffles" data-stat="MY TICKETS" data-promo="rb" data-name="Rewards Burst Super Raffles">
+            <span class="s1-msg__name">Rewards Burst</span><span class="s1-msg__stat"><strong></strong> Tickets</span>
+            <span class="overlay__s1-icon theme-ico" data-icon="raffles" aria-hidden="true"></span>
+          </span>
+          <span class="s1-msg" data-card="promo-tournament" data-stat="MY POSITION" data-promo="rb" data-name="Rewards Burst Tournament">
+            <span class="s1-msg__name">Rewards Burst</span><span class="s1-msg__stat">Position <strong></strong></span>
+            <span class="overlay__s1-icon theme-ico" data-icon="medal" aria-hidden="true"></span>
+          </span>
+          <span class="s1-msg" data-card="promo-prizedrops" data-stat="PRIZES LEFT" data-promo="rb" data-name="Rewards Burst Prize Drops">
+            <span class="s1-msg__name">Rewards Burst</span><span class="s1-msg__stat"><strong></strong> Prizes</span>
+            <span class="overlay__s1-icon theme-ico" data-icon="box" aria-hidden="true"></span>
+          </span>
+          <span class="s1-msg" data-card="promo-raffles-ended" data-stat="MY TICKETS" data-promo="zgt" data-name="Zero Gravity Thrillzz Super Raffles (ended)">
+            <span class="s1-msg__name">Zero Gravity Thrillzz</span><span class="s1-msg__stat"><strong></strong> Tickets</span>
+            <span class="overlay__s1-icon theme-ico theme-ico--ended" data-icon="raffles" aria-hidden="true"></span>
+          </span>
+          <!-- Hint, last in the rotation: no campaign, so the promo background fades out while it shows -->
+          <span class="s1-msg s1-msg--hint" data-name="launchpad"><span>Tap or swipe down to open</span></span>
+        </button>
+        <button class="overlay__s1-hide" type="button" aria-label="Hide launchpad" data-node-id="7188:52202">
+          <img src="assets/icons/close-20.svg" width="20" height="20" alt="">
+        </button>
+
+        <!-- Floating type, Small + Hidden (Figma "launchpad Floating" 7188:52128 / 7181:19564).
+             Chevron toggles Small ↔ Hidden; the rest of Small opens Full (State 3). -->
+        <div class="overlay__fl" data-promo="rb" data-node-id="7188:52129">
+          <!-- Promo background, faded in from the left (Figma "Mask group" 7188:5139); one per promo -->
+          <span class="fl-bg" aria-hidden="true">
+            <img data-promo="rb" src="assets/promo-banner-bg-2.jpg" alt="">
+            <img data-promo="zgt" src="assets/promo-banner-bg-1.jpg" alt="">
+          </span>
+          <!-- Win glow, faded in by the "Grant Ticket" trigger (Figma winBG 7188:52199) -->
+          <span class="fl-win" aria-hidden="true" data-node-id="7188:52199"></span>
+          <button class="fl-toggle" type="button" aria-label="Hide launchpad" aria-expanded="true" data-node-id="7181:19530">
+            <img class="fl-toggle__chevron" src="assets/floating/chevron.svg" width="20" height="20" alt="">
+            <img class="fl-toggle__divider" src="assets/floating/divider.svg" width="5" height="51" alt="">
+          </button>
+          <!-- One summary per promo card, cycling every 4s (js/lobby.js floatSummaries). The number is
+               copied from the card's stats cell named in data-stat; tapping opens Full on data-card. -->
+          <button class="fl-open" type="button" aria-label="Open Super Raffles" data-node-id="7188:52137">
+            <span class="fl-open__logo" aria-hidden="true">
+              <img class="fl-open__logo-rb" data-promo="rb" src="assets/floating/logo-rewards-burst.svg" alt="">
+              <img class="fl-open__logo-zgt" data-promo="zgt" src="assets/floating/logo_ZGT.svg" alt="">
+            </span>
+            <span class="fl-open__slides" aria-hidden="true">
+              <span class="fl-slide is-shown" data-card="promo-raffles" data-stat="MY TICKETS" data-promo="rb" data-name="Super Raffles">
+                <span class="fl-open__icon theme-ico" data-icon="raffles"></span>
+                <span class="fl-open__info"><strong></strong><span>TICKETS</span></span>
+              </span>
+              <span class="fl-slide" data-card="promo-tournament" data-stat="MY POSITION" data-promo="rb" data-name="Tournament">
+                <span class="fl-open__icon theme-ico" data-icon="medal"></span>
+                <span class="fl-open__info"><strong></strong><span>POSITION</span></span>
+              </span>
+              <span class="fl-slide" data-card="promo-prizedrops" data-stat="PRIZES LEFT" data-promo="rb" data-name="Prize Drops">
+                <span class="fl-open__icon theme-ico" data-icon="box"></span>
+                <span class="fl-open__info"><strong></strong><span>PRIZES</span></span>
+              </span>
+              <span class="fl-slide" data-card="promo-raffles-ended" data-stat="MY TICKETS" data-promo="zgt" data-name="Zero Gravity Thrillzz Super Raffles (ended)">
+                <span class="fl-open__icon theme-ico theme-ico--ended" data-icon="raffles"></span>
+                <span class="fl-open__info"><strong></strong><span>TICKETS</span></span>
+              </span>
+            </span>
+          </button>
+          <!-- Particles for the "Grant Ticket" trigger (added and removed by js/lobby.js) -->
+          <span class="fl-fx" aria-hidden="true"></span>
+        </div>
+
+        <!-- State 3: full promo content, sized to the game area so it doesn't reflow while the overlay resizes -->
+        <div class="overlay__s3">
+        <div class="overlay__content" data-node-id="5908:195990">
+          <!-- Figma "List": cards side by side, one per tab in the tab bar below (same order).
+               Tapping a tab scrolls the list to its card. Only card 3 (Raffles) has content so far. -->
+          <div class="promo-list" id="promo-list" data-node-id="5908:195995">
+          <!-- Figma "Jackpot Card" (5935:309180): vertical list of jackpot sections, each with
+               tickers and a horizontal "Curated Games" row. Rendered by js/lobby.js (jackpots). -->
+          <article class="promo-card promo-card--jackpots" id="promo-jackpots" aria-label="Jackpots" data-title="Jackpots" data-node-id="5935:309180">
+            <div class="jackpots" id="jackpots-list" data-node-id="5388:75156"></div>
+          </article>
+          <article class="promo-card" id="promo-raffles" aria-label="Super Raffles" data-title="Rewards Burst - Super Raffles" data-node-id="5908:195996">
+            <!-- Card body: lays out like the card; scrolls as a whole when the card is short (data-flow-below, js/lobby.js) -->
+            <div class="promo-card__body" data-flow-below="560">
+              <div class="promo-main" id="section-main" data-node-id="5908:195999">
+                <div class="promo-banner" data-node-id="5908:196000">
+                  <div class="promo-banner__bg" aria-hidden="true">
+                    <img src="assets/promo-banner-bg-2.jpg" alt="">
+                  </div>
+                  <!-- Countdown + stats across the top of the banner (Figma 7171:6540) -->
+                  <div class="promo-stats" data-node-id="7171:6541">
+                    <div class="promo-stats__cell promo-stats__cell--time">
+                      <div class="countdown" data-node-id="7171:6543">
+                        <div class="countdown__digits" aria-live="off">
+                          <span data-unit="d">00</span><i class="countdown__sep" aria-hidden="true"><img src="assets/countdown-dot.svg" width="5" height="5" alt=""><img src="assets/countdown-dot.svg" width="5" height="5" alt=""></i>
+                          <span data-unit="h">01</span><i class="countdown__sep" aria-hidden="true"><img src="assets/countdown-dot.svg" width="5" height="5" alt=""><img src="assets/countdown-dot.svg" width="5" height="5" alt=""></i>
+                          <span data-unit="m">25</span><i class="countdown__sep" aria-hidden="true"><img src="assets/countdown-dot.svg" width="5" height="5" alt=""><img src="assets/countdown-dot.svg" width="5" height="5" alt=""></i>
+                          <span data-unit="s">36</span>
+                        </div>
+                        <p class="countdown__ends">Ends: 01.12.30 23:59</p>
+                      </div>
+                    </div>
+                    <div class="promo-stats__cell" data-node-id="7171:6562"><span>MY TICKETS</span><strong>3</strong></div>
+                  </div>
+                  <div class="promo-banner__fg">
+                    <img class="promo-banner__logo" src="assets/promo-logo-rewards-burst.png" alt="Rewards Burst!">
+                  </div>
+                </div>
+
+                <div class="promo-info" data-node-id="7171:6581">
+                  <div class="main-attraction" data-node-id="7171:6566">
+                    <span>Top Prize</span>
+                    <strong>€10,000.00</strong>
+                  </div>
+                  <button class="btn btn--attention" type="button" data-node-id="5908:196010">Swap Tickets for Prizes</button>
+                  <div class="btn btn--info" data-node-id="5908:196011">Active &amp; Joined</div>
+                </div>
+              </div>
+
+              <!-- PromoInfoHandle + section ×4. One panel (Main or a section) is open at a time — see js/lobby.js -->
+              <button class="info-handle info-handle--swap" type="button" aria-expanded="false" aria-controls="section-swap" data-node-id="5908:196016">
+                <img src="assets/icons/chevron-up.svg" width="26" height="26" alt=""><span>SWAP TICKETS</span><img src="assets/icons/chevron-up.svg" width="26" height="26" alt="">
+              </button>
+              <section class="promo-section promo-section--swap" id="section-swap" data-node-id="5908:196017">
+                <div class="swap" data-node-id="5908:196019">
+                  <div class="swap__count" data-node-id="5908:196021"><span>No. of Tickets:</span><strong>3</strong></div>
+                  <div class="swap__scroll" data-node-id="5908:196025">
+                    <!-- Ticket offers + history are rendered by js/lobby.js (swapTickets) -->
+                    <div class="swap__list" id="swap-list" data-scroll data-node-id="5908:196026"></div>
+                    <div class="scrollbar" aria-hidden="true" data-node-id="5908:196043"><span class="scrollbar__handle"></span></div>
+                  </div>
+                </div>
+              </section>
+
+              <button class="info-handle info-handle--prizes" type="button" aria-expanded="false" aria-controls="section-prizes" data-node-id="5908:196045">
+                <img src="assets/icons/chevron-up.svg" width="26" height="26" alt=""><span>PRIZES</span><img src="assets/icons/chevron-up.svg" width="26" height="26" alt="">
+              </button>
+              <section class="promo-section promo-section--prizes" id="section-prizes" data-node-id="5908:196046">
+                <div class="prizes">
+                  <div class="prizes__labels" data-node-id="5908:196047"><span>Prize</span><span>Prizes Available</span></div>
+                  <div class="prize-row"><span>€ 10,000</span><span>1 / 1</span></div>
+                  <div class="prize-row"><span>1000X</span><span>10 / 25</span></div>
+                  <div class="prize-row is-unavailable"><span>500X</span><span>0 / 50</span></div>
+                  <div class="prize-row"><span>100X</span><span>56 / 250</span></div>
+                  <div class="prize-row"><span>20X</span><span>349 / 500</span></div>
+                  <div class="prize-row"><span>10X</span><span>3,057 / 10,000</span></div>
+                  <div class="prize-row"><span>5X</span><span>10,998 / 50,000</span></div>
+                </div>
+              </section>
+
+              <button class="info-handle info-handle--games" type="button" aria-expanded="false" aria-controls="section-games" data-node-id="5908:196057">
+                <img src="assets/icons/chevron-up.svg" width="26" height="26" alt=""><span>GAMES</span><img src="assets/icons/chevron-up.svg" width="26" height="26" alt="">
+              </button>
+              <section class="promo-section promo-section--games" id="section-games" data-node-id="5908:196058">
+                <!-- Game tiles are rendered by js/lobby.js (gamesGrid) -->
+                <div class="games-grid" data-node-id="5908:196059"></div>
+              </section>
+
+              <button class="info-handle info-handle--rules" type="button" aria-expanded="false" aria-controls="section-rules" data-node-id="5908:196060">
+                <img src="assets/icons/chevron-up.svg" width="26" height="26" alt=""><span>RULES</span><img src="assets/icons/chevron-up.svg" width="26" height="26" alt="">
+              </button>
+              <section class="promo-section promo-section--rules" id="section-rules" data-node-id="5908:196061">
+                <div class="rules" data-node-id="5908:196062">
+                  <div class="rules__list" data-scroll data-node-id="5908:196065">
+                    <h3 class="rules__heading">Ut in purus et odio ullamcorper</h3>
+                    <div class="rules__row">
+                      <span class="ico ico--coins rules__icon"><img src="assets/icons/coins.svg" alt=""></span>
+                      <p class="rules__box">Consectetur adipiscing elit. Sed rutrum, sapien vitae vulputate dignissim, nibh urna posuere risus</p>
+                    </div>
+                    <p class="rules__box rules__box--wide">Consectetur adipiscing elit. Sed rutrum, sapien vitae vulputate dignissim, nibh urna posuere risus</p>
+                    <h3 class="rules__heading">Ut in purus et odio ullamcorper</h3>
+                    <div class="rules__body">
+                      <p>Vulputate vel non augue. In tincidunt nunc neque, a egestas dolor cursus vitae. Vulputate vel non augue. In tincidunt nunc neque, a egestas dolor cursus vitae.Vestibulum eget nunc pulvinar Fermentum enim vel, interdum ipsum. In mauris nisl, suscipit quis suscipit et, faucibus et velit. Suspendisse elit arcu, porttitor id dolor sit amet, accumsan gravida purus. Praesent ornare tincidunt neque, quis tincidunt enim volutpat sed. Sed non nibh venenatis, vehicula ante ac, tristique lorem.</p>
+                      <p>&nbsp;</p>
+                      <ol start="5">
+                        <li>Fusce at ullamcorper nibh.<br>Pellentesque volutpat vel ipsum ut fermentum. Ut tempus maximus sollicitudin. Donec tincidunt, lacus vitae fringilla pellentesque, lorem leo viverra nunc, vitae scelerisque quam sem eget metus. Curabitur ut risus fermentum, pretium nisl rhoncus, iaculis elit. Proin feugiat dui turpis, at tristique quam feugiat id. Phasellus blandit, quam eu elementum pharetra, ante ipsum hendrerit justo, facilisis laoreet tortor libero quis orci.</li>
+                      </ol>
+                      <p>Vivamus eu mollis purus, sit amet luctus diam. Integer sed consequat velit. Aenean id enim eget lacus feugiat sodales. Aenean lacinia dapibus dui in euismod. Ut tincidunt ex eget lacus finibus ultrices. Nullam in mi vel sapien pulvinar faucibus accumsan sed dolor. Etiam eu est est. Morbi justo turpis, faucibus id mollis vel, hendrerit at neque. Quisque semper aliquet elit, ac ullamcorper justo faucibus eget. Aenean luctus massa vel urna ultrices, ac tristique mi fermentum. Nullam semper quam nisi, sed gravida tortor porttitor vel. Ut porta, diam vitae tempus blandit, quam tortor rutrum orci, sed tincidunt leo leo et purus. Maecenas ac efficitur risus, ac tempus ipsum. Proin sit amet nisi vitae enim euismod laoreet.</p>
+                    </div>
+                  </div>
+                  <div class="scrollbar" aria-hidden="true" data-node-id="5908:196076"><span class="scrollbar__handle"></span></div>
+                </div>
+              </section>
+            </div>
+          </article>
+          <!-- Tournament card (replaces Search) — blank until assets arrive -->
+          <!-- Figma "Promo Card - Tournaments" (5928:306117). Same accordion rules as Raffles.
+               Games and Rules are copied from the Raffles card (data-clone-from); Prizes and
+               Leaderboard are its own. -->
+          <article class="promo-card" id="promo-tournament" aria-label="Tournament" data-title="Rewards Burst - Tournament" data-node-id="5928:306117">
+            <!-- Card body: lays out like the card; scrolls as a whole when the card is short (data-flow-below, js/lobby.js) -->
+            <div class="promo-card__body" data-flow-below="560">
+              <div class="promo-main" data-node-id="5928:306120">
+                <div class="promo-banner" data-node-id="5928:306704">
+                  <div class="promo-banner__bg" aria-hidden="true">
+                    <img src="assets/promo-banner-bg-2.jpg" alt="">
+                  </div>
+                  <!-- Countdown + stats across the top of the banner (Figma 7171:6540) -->
+                  <div class="promo-stats">
+                    <div class="promo-stats__cell promo-stats__cell--time">
+                      <div class="countdown">
+                        <div class="countdown__digits" aria-live="off">
+                          <span data-unit="d">00</span><i class="countdown__sep" aria-hidden="true"><img src="assets/countdown-dot.svg" width="5" height="5" alt=""><img src="assets/countdown-dot.svg" width="5" height="5" alt=""></i>
+                          <span data-unit="h">01</span><i class="countdown__sep" aria-hidden="true"><img src="assets/countdown-dot.svg" width="5" height="5" alt=""><img src="assets/countdown-dot.svg" width="5" height="5" alt=""></i>
+                          <span data-unit="m">25</span><i class="countdown__sep" aria-hidden="true"><img src="assets/countdown-dot.svg" width="5" height="5" alt=""><img src="assets/countdown-dot.svg" width="5" height="5" alt=""></i>
+                          <span data-unit="s">36</span>
+                        </div>
+                        <p class="countdown__ends">Ends: 01.12.30 23:59</p>
+                      </div>
+                    </div>
+                    <div class="promo-stats__cell"><span>MY SCORE</span><strong>1563</strong></div>
+                    <div class="promo-stats__cell"><span>MY POSITION</span><strong>15</strong></div>
+                  </div>
+                  <div class="promo-banner__fg">
+                    <img class="promo-banner__logo" src="assets/promo-logo-rewards-burst.png" alt="Rewards Burst!">
+                  </div>
+                </div>
+
+                <div class="promo-info">
+                  <div class="main-attraction" data-node-id="5928:306130">
+                    <span>Prize Pool</span>
+                    <strong>€1 000 000.00</strong>
+                  </div>
+                  <div class="btn btn--info" data-node-id="5928:306131">Active &amp; Joined</div>
+                </div>
+              </div>
+
+              <button class="info-handle" type="button" aria-expanded="false" aria-controls="tn-section-prizes" data-node-id="5928:306136">
+                <img src="assets/icons/chevron-up.svg" width="26" height="26" alt=""><span>PRIZES</span><img src="assets/icons/chevron-up.svg" width="26" height="26" alt="">
+              </button>
+              <section class="promo-section promo-section--prizes" id="tn-section-prizes" data-node-id="5928:306137">
+                <div class="prizes">
+                  <div class="prizes__labels" data-node-id="5928:306138"><span>Rank</span><span>Prizes</span></div>
+                  <div class="prize-row"><span>1</span><span>€ 10,000</span></div>
+                  <div class="prize-row"><span>2</span><span>€ 5,000</span></div>
+                  <div class="prize-row"><span>3</span><span>€ 1,000</span></div>
+                  <div class="prize-row"><span>4</span><span>€ 500</span></div>
+                  <div class="prize-row"><span>5 - 20</span><span>€ 50</span></div>
+                  <div class="prize-row"><span>21 - 100</span><span>€ 5</span></div>
+                  <div class="prize-row"><span>101 - 200</span><span>€ 1</span></div>
+                </div>
+              </section>
+
+              <button class="info-handle" type="button" aria-expanded="false" aria-controls="tn-section-games" data-node-id="5928:306148">
+                <img src="assets/icons/chevron-up.svg" width="26" height="26" alt=""><span>GAMES</span><img src="assets/icons/chevron-up.svg" width="26" height="26" alt="">
+              </button>
+              <section class="promo-section promo-section--games" id="tn-section-games" data-clone-from="section-games" data-node-id="5928:306149"></section>
+
+              <button class="info-handle" type="button" aria-expanded="false" aria-controls="tn-section-leaderboard" data-node-id="5928:306151">
+                <img src="assets/icons/chevron-up.svg" width="26" height="26" alt=""><span>LEADERBOARD</span><img src="assets/icons/chevron-up.svg" width="26" height="26" alt="">
+              </button>
+              <section class="promo-section promo-section--leaderboard" id="tn-section-leaderboard" data-node-id="5928:306152">
+                <!-- Same layout as Prize Drops Winners, plus a 54px Rank column -->
+                <div class="winners winners--ranked" data-node-id="5928:306153">
+                  <div class="winners__col">
+                    <div class="prizes__labels" data-node-id="5928:306155"><span>Rank</span><span>Player ID</span><span>Prizes</span></div>
+                    <div class="winner-row is-me" data-node-id="5928:306159"><span>475</span><span>My Name</span><span>1000</span></div>
+                    <!-- Rows rendered by js/lobby.js (winnersList) -->
+                    <div class="winners__list" data-scroll data-ranked data-node-id="5928:306162"></div>
+                  </div>
+                  <div class="scrollbar" aria-hidden="true" data-node-id="5928:306183"><span class="scrollbar__handle"></span></div>
+                </div>
+              </section>
+
+              <button class="info-handle" type="button" aria-expanded="false" aria-controls="tn-section-rules" data-node-id="5928:306185">
+                <img src="assets/icons/chevron-up.svg" width="26" height="26" alt=""><span>RULES</span><img src="assets/icons/chevron-up.svg" width="26" height="26" alt="">
+              </button>
+              <section class="promo-section promo-section--rules" id="tn-section-rules" data-clone-from="section-rules" data-node-id="5928:306186"></section>
+            </div>
+          </article>
+          <!-- Figma "Promo Card - PrizeDrops" (5928:307346). Same accordion rules as Raffles.
+               Prizes, Games and Rules are identical to the Raffles card, so they're copied from it
+               at load (data-clone-from, js/lobby.js) instead of duplicating the markup. -->
+          <article class="promo-card" id="promo-prizedrops" aria-label="Prize Drops" data-title="Rewards Burst - Prize Drops" data-node-id="5928:307346">
+            <!-- Card body: lays out like the card; scrolls as a whole when the card is short (data-flow-below, js/lobby.js) -->
+            <div class="promo-card__body" data-flow-below="560">
+              <div class="promo-main" data-node-id="5928:307349">
+                <div class="promo-banner" data-node-id="5928:307937">
+                  <div class="promo-banner__bg" aria-hidden="true">
+                    <img src="assets/promo-banner-bg-2.jpg" alt="">
+                  </div>
+                  <!-- Countdown + stats across the top of the banner (Figma 7171:6540) -->
+                  <div class="promo-stats">
+                    <div class="promo-stats__cell promo-stats__cell--time">
+                      <div class="countdown">
+                        <div class="countdown__digits" aria-live="off">
+                          <span data-unit="d">00</span><i class="countdown__sep" aria-hidden="true"><img src="assets/countdown-dot.svg" width="5" height="5" alt=""><img src="assets/countdown-dot.svg" width="5" height="5" alt=""></i>
+                          <span data-unit="h">01</span><i class="countdown__sep" aria-hidden="true"><img src="assets/countdown-dot.svg" width="5" height="5" alt=""><img src="assets/countdown-dot.svg" width="5" height="5" alt=""></i>
+                          <span data-unit="m">25</span><i class="countdown__sep" aria-hidden="true"><img src="assets/countdown-dot.svg" width="5" height="5" alt=""><img src="assets/countdown-dot.svg" width="5" height="5" alt=""></i>
+                          <span data-unit="s">36</span>
+                        </div>
+                        <p class="countdown__ends">Ends: 01.12.30 23:59</p>
+                      </div>
+                    </div>
+                    <div class="promo-stats__cell"><span>TOP PRIZE</span><strong>€ 10,000</strong></div>
+                    <div class="promo-stats__cell"><span>PRIZES LEFT</span><strong>250</strong></div>
+                  </div>
+                  <div class="promo-banner__fg">
+                    <img class="promo-banner__logo" src="assets/promo-logo-rewards-burst.png" alt="Rewards Burst!">
+                  </div>
+                </div>
+
+                <div class="promo-info">
+                  <div class="main-attraction" data-node-id="5928:307359">
+                    <span>Prize Pool</span>
+                    <strong>€1 000 000.00</strong>
+                  </div>
+                  <!-- Not in Figma: status pill becomes a call to action that opens the Games section -->
+                  <button class="btn btn--notice" type="button" data-opens="pd-section-games" data-node-id="5928:307360">
+                    Switch game to participate
+                  </button>
+                </div>
+              </div>
+
+              <button class="info-handle" type="button" aria-expanded="false" aria-controls="pd-section-prizes" data-node-id="5928:307365">
+                <img src="assets/icons/chevron-up.svg" width="26" height="26" alt=""><span>PRIZES</span><img src="assets/icons/chevron-up.svg" width="26" height="26" alt="">
+              </button>
+              <section class="promo-section promo-section--prizes" id="pd-section-prizes" data-clone-from="section-prizes" data-node-id="5928:307366"></section>
+
+              <button class="info-handle" type="button" aria-expanded="false" aria-controls="pd-section-games" data-node-id="5928:307377">
+                <img src="assets/icons/chevron-up.svg" width="26" height="26" alt=""><span>GAMES</span><img src="assets/icons/chevron-up.svg" width="26" height="26" alt="">
+              </button>
+              <section class="promo-section promo-section--games" id="pd-section-games" data-clone-from="section-games" data-node-id="5928:307378"></section>
+
+              <button class="info-handle" type="button" aria-expanded="false" aria-controls="pd-section-winners" data-node-id="5928:307380">
+                <img src="assets/icons/chevron-up.svg" width="26" height="26" alt=""><span>WINNERS</span><img src="assets/icons/chevron-up.svg" width="26" height="26" alt="">
+              </button>
+              <section class="promo-section promo-section--winners" id="pd-section-winners" data-node-id="5928:307381">
+                <div class="winners" data-node-id="5928:307382">
+                  <div class="winners__col">
+                    <div class="prizes__labels" data-node-id="5928:307384"><span>Player ID</span><span>Prizes</span></div>
+                    <div class="winner-row is-me" data-node-id="5928:307387"><span>My Name</span><span>1000</span></div>
+                    <!-- Rows rendered by js/lobby.js (winnersList) -->
+                    <div class="winners__list" data-scroll data-node-id="5928:307390"></div>
+                  </div>
+                  <div class="scrollbar" aria-hidden="true" data-node-id="5928:307411"><span class="scrollbar__handle"></span></div>
+                </div>
+              </section>
+
+              <button class="info-handle" type="button" aria-expanded="false" aria-controls="pd-section-rules" data-node-id="5928:307413">
+                <img src="assets/icons/chevron-up.svg" width="26" height="26" alt=""><span>RULES</span><img src="assets/icons/chevron-up.svg" width="26" height="26" alt="">
+              </button>
+              <section class="promo-section promo-section--rules" id="pd-section-rules" data-clone-from="section-rules" data-node-id="5928:307414"></section>
+            </div>
+          </article>
+          <!-- Concluded Super Raffles campaign: copy of the Raffles card with "Ended" status, a zeroed
+               timer and only Swap Tickets + Rules (cloned from the Raffles card). Not in Figma. -->
+          <article class="promo-card" id="promo-raffles-ended" aria-label="Super Raffles (ended)" data-title="Zero Gravity Thrillzz - Super Raffles (Ended)">
+            <div class="promo-card__body" data-flow-below="560">
+              <div class="promo-main">
+                <div class="promo-banner">
+                  <div class="promo-banner__bg" aria-hidden="true">
+                    <img src="assets/promo-banner-bg-1.jpg" alt="">
+                  </div>
+                  <!-- Countdown + stats across the top of the banner (Figma 7171:6540) -->
+                  <div class="promo-stats">
+                    <div class="promo-stats__cell promo-stats__cell--time">
+                      <div class="countdown">
+                        <div class="countdown__digits" aria-live="off">
+                          <span data-unit="d">00</span><i class="countdown__sep" aria-hidden="true"><img src="assets/countdown-dot.svg" width="5" height="5" alt=""><img src="assets/countdown-dot.svg" width="5" height="5" alt=""></i>
+                          <span data-unit="h">00</span><i class="countdown__sep" aria-hidden="true"><img src="assets/countdown-dot.svg" width="5" height="5" alt=""><img src="assets/countdown-dot.svg" width="5" height="5" alt=""></i>
+                          <span data-unit="m">00</span><i class="countdown__sep" aria-hidden="true"><img src="assets/countdown-dot.svg" width="5" height="5" alt=""><img src="assets/countdown-dot.svg" width="5" height="5" alt=""></i>
+                          <span data-unit="s">00</span>
+                        </div>
+                        <p class="countdown__ends">Ended: 01.12.25 23:59</p>
+                      </div>
+                    </div>
+                    <div class="promo-stats__cell"><span>MY TICKETS</span><strong>3</strong></div>
+                  </div>
+                  <div class="promo-banner__fg">
+                    <img class="promo-banner__logo" src="assets/promo-logo-zero-gravity-thrillzz.png" alt="Zero Gravity Thrillzz">
+                  </div>
+                </div>
+
+                <div class="promo-info">
+                  <div class="main-attraction">
+                    <span>Top Prize</span>
+                    <strong>€10,000.00</strong>
+                  </div>
+                  <button class="btn btn--attention" type="button">Swap Tickets for Prizes</button>
+                  <div class="btn btn--info btn--ended">Ended</div>
+                </div>
+              </div>
+
+              <button class="info-handle" type="button" aria-expanded="false" aria-controls="re-section-swap">
+                <img src="assets/icons/chevron-up.svg" width="26" height="26" alt=""><span>SWAP TICKETS</span><img src="assets/icons/chevron-up.svg" width="26" height="26" alt="">
+              </button>
+              <section class="promo-section promo-section--swap" id="re-section-swap" data-clone-from="section-swap"></section>
+
+              <button class="info-handle" type="button" aria-expanded="false" aria-controls="re-section-rules">
+                <img src="assets/icons/chevron-up.svg" width="26" height="26" alt=""><span>RULES</span><img src="assets/icons/chevron-up.svg" width="26" height="26" alt="">
+              </button>
+              <section class="promo-section promo-section--rules" id="re-section-rules" data-clone-from="section-rules"></section>
+            </div>
+          </article>
+          <article class="promo-card promo-card--blank" aria-label="Free Games" data-title="Free Games"></article>
+          <article class="promo-card promo-card--blank" aria-label="Mini Games" data-title="Mini Games"></article>
+          </div>
+        </div>
+
+        <nav class="tabbar" aria-label="Launchpad" data-node-id="5908:196085">
+          <!-- Selected tab's docked shape (not in Figma; from a reference image): drawn here, centred under
+               the card, so it can flare into the card's edge. Fixed 104×84 geometry — see css/lobby.css .tab-dock -->
+          <svg class="tab-dock" viewBox="0 0 104 84" width="104" height="84" aria-hidden="true">
+            <defs>
+              <linearGradient id="tab-dock-fill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#000" stop-opacity="0.85"/>
+                <stop offset="1" stop-color="#4a4a4a" stop-opacity="0.85"/>
+              </linearGradient>
+            </defs>
+            <path class="tab-dock__fill" d="M0 1A8 8 0 0 1 8 9V38A44 44 0 0 0 96 38V9A8 8 0 0 1 104 1Z"/>
+            <path class="tab-dock__line" d="M0 1A8 8 0 0 1 8 9V38A44 44 0 0 0 96 38V9A8 8 0 0 1 104 1"/>
+          </svg>
+          <div class="tabbar__scroll">
+            <button class="tab" type="button" aria-label="Slots">
+              <span class="tab__bg"><span class="tab__icon tab-ico" data-icon="s777"></span></span>
+            </button>
+            <button class="tab tab--active" type="button" aria-label="Super Raffles" aria-current="page">
+              <span class="tab__bg"><span class="tab__icon tab-ico" data-icon="raffles"></span></span>
+            </button>
+            <!-- Tournament tab (replaces Search) — medal icon -->
+            <button class="tab" type="button" aria-label="Tournament">
+              <span class="tab__bg"><span class="tab__icon tab-ico" data-icon="medal"></span></span>
+            </button>
+            <button class="tab" type="button" aria-label="Prize Drop (new)">
+              <span class="tab__bg"><span class="tab__icon tab-ico" data-icon="box"></span></span>
+              <img class="tab__dot" src="assets/dot-notification-1.svg" width="12" height="12" alt="">
+            </button>
+            <!-- Ended Super Raffles: same raffles icon, greyed via the --ico-* colours (css/lobby.css .tab--ended) -->
+            <button class="tab tab--ended" type="button" aria-label="Super Raffles (ended)">
+              <span class="tab__bg"><span class="tab__icon tab-ico" data-icon="raffles"></span></span>
+            </button>
+            <button class="tab tab--muted" type="button" aria-label="Free Games">
+              <span class="tab__bg"><span class="tab__icon tab-ico" data-icon="free"></span></span>
+            </button>
+            <button class="tab" type="button" aria-label="Mini Games">
+              <span class="tab__bg"><span class="tab__icon tab-ico" data-icon="wheel"></span></span>
+            </button>
+          </div>
+        </nav>
+
+        </div>
+      </div>
+    </section>
+
+    <div class="safari-bar bottom-nav" aria-hidden="true" data-node-id="5908:196131">
+      <!-- Toolbar icons are SF Symbols text glyphs in Figma (only render on Apple devices);
+           these inline SVGs are stand-ins drawn to match. -->
+      <div class="bottom-nav__toolbar glass-pill" data-node-id="5908:196132">
+        <svg viewBox="0 0 24 24"><path d="M15 4.5 7.5 12l7.5 7.5"/></svg>
+        <svg viewBox="0 0 24 24"><path d="m9 4.5 7.5 7.5L9 19.5"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M12 3v12M8 7l4-4 4 4M8.5 10H6.5a1.5 1.5 0 0 0-1.5 1.5v8A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5v-8a1.5 1.5 0 0 0-1.5-1.5h-2"/></svg>
+        <svg viewBox="0 0 24 24"><path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5Zm0 0v13"/></svg>
+        <svg viewBox="0 0 24 24"><rect x="7.5" y="3.5" width="13" height="13" rx="2.5"/><path d="M16.5 20.5h-10a3 3 0 0 1-3-3v-10"/></svg>
+      </div>
+    </div>
+  </main>
+
+  <!-- Prototype controls (not part of the design). Desktop: panels either side of the phone
+       (the wrapper is display: contents). Mobile: the wrapper becomes a slide-in drawer. -->
+  <div class="proto-menu" id="proto-menu">
+  <aside class="proto-controls" aria-label="Prototype controls">
+    <p class="proto-controls__label">Prototype</p>
+    <button class="proto-toggle" type="button" id="toggle-jackpot" aria-pressed="true">
+      Jackpot Madness <span class="proto-toggle__switch" aria-hidden="true"></span>
+    </button>
+    <button class="proto-toggle" type="button" id="toggle-safari" aria-pressed="false">
+      Safari <span class="proto-toggle__switch" aria-hidden="true"></span>
+    </button>
+
+    <fieldset class="proto-radios">
+      <legend class="proto-controls__label">Type</legend>
+      <label class="proto-radio"><input type="radio" name="lp-type" value="floating" checked> Floating</label>
+      <label class="proto-radio"><input type="radio" name="lp-type" value="dropdown"> Dropdown</label>
+    </fieldset>
+
+    <!-- Options depend on the type; js/lobby.js hides the other type's labels -->
+    <fieldset class="proto-radios">
+      <legend class="proto-controls__label">Launchpad state</legend>
+      <label class="proto-radio" data-type="dropdown" hidden><input type="radio" name="lp-state" value="0"> Hidden</label>
+      <label class="proto-radio" data-type="dropdown" hidden><input type="radio" name="lp-state" value="1"> State 1</label>
+      <label class="proto-radio" data-type="dropdown" hidden><input type="radio" name="lp-state" value="2"> State 2</label>
+      <label class="proto-radio" data-type="dropdown" hidden><input type="radio" name="lp-state" value="3"> State 3</label>
+      <label class="proto-radio" data-type="floating"><input type="radio" name="lp-state" value="hidden"> Hidden</label>
+      <label class="proto-radio" data-type="floating"><input type="radio" name="lp-state" value="small" checked> Small</label>
+      <label class="proto-radio" data-type="floating"><input type="radio" name="lp-state" value="3"> Full</label>
+    </fieldset>
+
+    <fieldset class="proto-radios">
+      <legend class="proto-controls__label">Triggers</legend>
+      <button class="proto-toggle proto-action" type="button" id="trigger-ticket" data-closes-menu>Grant Ticket</button>
+    </fieldset>
+  </aside>
+
+  <!-- Right side: game texture behind the launchpad (options built by js/lobby.js) + operator theme -->
+  <aside class="proto-controls proto-controls--right" aria-label="Game">
+    <fieldset class="proto-radios" id="game-radios">
+      <legend class="proto-controls__label">Game</legend>
+    </fieldset>
+
+    <fieldset class="proto-radios">
+      <legend class="proto-controls__label">Operator theme</legend>
+      <label class="proto-radio"><input type="radio" name="theme" value="1" checked> Operator Theme 1</label>
+      <label class="proto-radio"><input type="radio" name="theme" value="2"> Operator Theme 2</label>
+      <label class="proto-radio"><input type="radio" name="theme" value="3"> Operator Theme 3</label>
+    </fieldset>
+  </aside>
+  </div>
+  </div>
+
+  <!-- Mobile only: browsers allow fullscreen only from a tap, so this covers the page until tapped -->
+  <button class="fs-prompt" type="button" id="fs-prompt" hidden>
+    <svg viewBox="0 0 24 24" width="40" height="40" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>
+    </svg>
+    <span>Tap to go fullscreen</span>
+  </button>
+
+  <script src="js/tab-icons-svg.js"></script>
+  <script src="js/tab-icons.js"></script>
+  <script src="js/lobby.js"></script>
+</body>
+</html>

@@ -1,0 +1,2127 @@
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html, body { margin: 0; height: 100%; }
+/* No browser tap flash (Android Chrome blue box, iOS grey); the UI gives its own feedback */
+html { -webkit-tap-highlight-color: transparent; }
+
+body {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: 24px 0;
+  background: #1a1d24;
+  font-family: var(--font);
+  color: var(--white);
+}
+
+button { font: inherit; color: inherit; border: 0; padding: 0; background: none; cursor: pointer; }
+img { display: block; }
+
+/* Cap-height trim, matching Figma's text-box-trim (cap / alphabetic).
+   line-height = Roboto cap height (0.711em) reproduces it within ~0.2px and,
+   unlike `text-box`, works in every browser. */
+.card-title__text,
+.btn,
+.countdown__digits span,
+.countdown__ends,
+.promo-stats__cell > *,
+.info-handle span {
+  line-height: 0.711;
+}
+
+/* ---------- Stage: phone screen centred, prototype controls to its left ---------- */
+.stage { position: relative; }
+
+.proto-controls {
+  position: absolute;
+  top: 0;
+  right: 100%;
+  margin-right: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 180px;
+}
+.proto-controls--right {
+  right: auto;
+  left: 100%;
+  margin-right: 0;
+  margin-left: 24px;
+}
+.proto-controls--right .proto-radios:first-child { margin-top: 0; }
+.proto-controls__label {
+  margin: 0 0 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gray-mid);
+}
+.proto-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+}
+.proto-toggle:hover { background: rgba(255, 255, 255, 0.1); }
+.proto-action:active { background: rgba(255, 255, 255, 0.16); }
+.proto-action:disabled,
+.proto-action:disabled:hover {
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--gray-mid);
+  cursor: not-allowed;
+}
+.proto-toggle__switch {
+  position: relative;
+  flex: none;
+  width: 32px;
+  height: 18px;
+  border-radius: 100px;
+  background: var(--gray-mid);
+  transition: background 0.2s;
+}
+.proto-toggle__switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--white);
+  transition: transform 0.2s;
+}
+.proto-toggle[aria-pressed="true"] .proto-toggle__switch { background: var(--section-open); }
+.proto-toggle[aria-pressed="true"] .proto-toggle__switch::after { transform: translateX(14px); }
+
+.proto-radios {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 16px 0 0;
+  padding: 0;
+  border: 0;
+}
+.proto-radios legend { padding: 0; }
+.proto-radio {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.proto-radio:hover { background: rgba(255, 255, 255, 0.1); }
+.proto-radio[hidden] { display: none; }
+.proto-radio input {
+  appearance: none;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  border: 2px solid var(--gray-mid);
+  border-radius: 50%;
+  cursor: pointer;
+}
+.proto-radio input:checked {
+  border-color: var(--section-open);
+  background: radial-gradient(circle, var(--section-open) 0 3.5px, transparent 4px);
+}
+.proto-radio:has(input:focus-visible) { outline: 2px solid var(--accent-1-bright); outline-offset: 2px; }
+
+/* ---------- Phone screen (fixed 402×874) ----------
+   Vertical stack: TitanBar 26 → JackpotMadness 68 (or 0 when off) → GameArea fills the rest. */
+.screen {
+  position: relative;
+  width: var(--screen-w);
+  height: var(--screen-h);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--black);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08), 0 24px 64px rgba(0, 0, 0, 0.6);
+}
+
+/* ---------- Safari / iOS chrome (Status Bar 62, URL Bar 60, Bottom Nav Bar 92) ----------
+   Toggled together; each collapses to 0 height and the game area takes the space. */
+.safari-bar {
+  flex: none;
+  position: relative;
+  height: var(--bar-h);
+  overflow: hidden;
+  background: var(--white);
+  color: #1b1b1b;
+  font-family: var(--font-ios);
+}
+.screen.is-ready .safari-bar { transition: height 0.3s ease; }
+.screen.no-safari .safari-bar { height: 0; }
+
+/* Safari glass pill. Figma stacks white 25% / black 25% / #444 60% (plus-lighter) /
+   #f8f8f8 20% (luminosity) over the white bar, which resolves to ≈ #f8f8f8. */
+.glass-pill {
+  background: #f8f8f8;
+  border-radius: 1000px;
+  box-shadow:
+    1.25px 0 0 -0.75px #d0d0d0,
+    -1.25px 0 0 -0.75px #d0d0d0,
+    0 0 0 0.5px #e8e8e8,
+    0 8px 15px rgba(0, 0, 0, 0.02);
+}
+
+.status-bar { --bar-h: 62px; }
+.status-bar__inner {
+  position: relative;
+  height: 36px;
+  margin-top: 14px;
+}
+.status-bar__time {
+  position: absolute;
+  left: 16px;
+  top: calc(50% - 9.67px);
+  width: 122px;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  line-height: normal;
+  text-align: center;
+}
+.status-bar__island {
+  position: absolute;
+  left: 50%;
+  top: calc(50% + 0.17px);
+  width: 125px;
+  height: 37px;
+  border-radius: 18px;
+  background: var(--black);
+  transform: translate(-50%, -50%);
+}
+.status-bar__icons {
+  position: absolute;
+  right: 35px;
+  top: calc(50% + 0.33px);
+  width: 77.9893px;
+  height: 13px;
+  transform: translateY(-50%);
+}
+
+.url-bar { --bar-h: 60px; }
+.url-bar__field {
+  position: absolute;
+  top: 8px;
+  left: 16px;
+  width: 370px;
+  height: 44px;
+}
+.url-bar__menu {
+  position: absolute;
+  left: 14.5px;
+  top: calc(50% - 0.1px);
+  width: 16.3008px;
+  height: 11.8008px;
+  transform: translateY(-50%);
+}
+.url-bar__url {
+  position: absolute;
+  left: calc(50% + 0.5px);
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 17px;
+  font-weight: 510;
+  letter-spacing: -0.4522px;
+  line-height: normal;
+  white-space: nowrap;
+}
+.url-bar__reload {
+  position: absolute;
+  right: 13.14px;
+  top: calc(50% - 0.31px);
+  width: 14.9568px;
+  height: 18.1824px;
+  transform: translateY(-50%);
+}
+
+.bottom-nav { --bar-h: 92px; }
+.bottom-nav__toolbar {
+  position: absolute;
+  top: 17.5px;
+  left: 34px;
+  width: 334px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 44px;
+  border-radius: 24px;
+  box-shadow:
+    0 0 0 0.5px rgba(0, 0, 0, 0.1),
+    1.25px 0 0 -0.75px #d0d0d0,
+    -1.25px 0 0 -0.75px #d0d0d0,
+    0 2px 40px rgba(0, 0, 0, 0.1);
+}
+.bottom-nav__toolbar svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ---------- TitanBar ---------- */
+.titan-bar {
+  flex: none;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 5px;
+  background: var(--black);
+}
+.titan-bar__dots { display: flex; gap: 3px; height: 21px; align-items: center; padding: 1px 2px; }
+.titan-bar__dots span { width: 7px; height: 7px; border-radius: 100px; background: var(--white); }
+.titan-bar__clock { font-family: var(--font-clock); font-size: 14px; }
+
+/* ---------- JackpotMadness (68px, toggled off → 0) ---------- */
+.jackpot {
+  position: relative;
+  flex: none;
+  width: 402px;
+  height: 68px;
+  overflow: hidden;
+}
+/* .is-ready is added after first paint so a ?jackpot=off load doesn't animate */
+.screen.is-ready .jackpot { transition: height 0.3s ease; }
+.screen.no-jackpot .jackpot { height: 0; }
+.jackpot img {
+  position: absolute;
+  top: -148px;
+  left: 0;
+  width: 402px;
+  height: 875.102px;
+  object-fit: cover;
+}
+
+/* ---------- GameArea (780 with jackpot, 848 without) ---------- */
+.game-area {
+  position: relative;
+  flex: 1 0 0;
+  min-height: 0;
+  width: 402px;
+}
+/* Game sits below the 26px LaunchpadReservedSpace */
+.game-area__game {
+  position: absolute;
+  inset: 26px 0 0;
+  width: 100%;
+  height: calc(100% - 26px);
+  object-fit: fill;   /* whole texture always visible, stretched to the area (aspect ratio ignored) */
+}
+
+/* ---------- Launchpad (morphs between states) ----------
+   One element; each state sets its size, side inset, blur and shadow, and fades in its own
+   background + content layer. All of it transitions, so switching state animates both ways.
+
+   State 3 (Figma "Launchpad - Overlay"): full height minus 12px, blur 16, white 5% fill.
+   State 1 (Figma "Launchpad_Stage1"):    28px strip inset 4px each side, blur 4.
+   Both: 16px bottom radius + 1px accent_1-mid stroke on the bottom edge. */
+.game-area { container-type: size; }   /* lets State 3 content size itself to the game area (cqw/cqh) */
+
+.overlay {
+  --lp-dur: 0.2s;   /* keep in sync with BOUNCE_MS in js/lobby.js */
+  --lp-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  /* Same shape as the JS size bounce: passes the target ~60% in, dips back, settles */
+  --lp-bounce: linear(0, 0.3 12%, 0.65 28%, 0.95 45%, 1.05 60%, 1.03 70%, 0.985 84%, 1);
+  /* Incoming content: short delay so outgoing content clears first, then bounces in with the size */
+  --lp-in-delay: 0.04s;
+  --lp-in-dur: 0.16s;
+  --lp-out-dur: 0.05s;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: calc(100% - 12px);
+  overflow: hidden;
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  border-radius: 0 0 16px 16px;
+  box-shadow: 0 4px 4px rgba(0, 0, 0, 0.25);
+}
+/* Size/shape (height, left, right, border-radius) is animated by js/lobby.js with a bounce;
+   only the look is transitioned here. */
+.screen.is-ready .overlay {
+  transition:
+    box-shadow var(--lp-dur) var(--lp-ease),
+    backdrop-filter var(--lp-dur) var(--lp-ease),
+    -webkit-backdrop-filter var(--lp-dur) var(--lp-ease);
+}
+/* Bottom stroke drawn on top of the background layers */
+.overlay::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: inherit;
+  box-shadow: inset 0 -1px 0 var(--accent-1-mid);
+  pointer-events: none;
+}
+
+.overlay__bg {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;   /* keeps the corners when the overlay doesn't clip (floating Hidden) */
+  opacity: 0;
+  transition: opacity var(--lp-dur) var(--lp-ease);
+}
+.overlay__bg--s3 {
+  background:
+    linear-gradient(to bottom, var(--black) 0%, rgba(var(--lp-tint-rgb), 0.5) 5%, rgba(var(--lp-tint-rgb), 0) 50%),
+    rgba(255, 255, 255, 0.05);
+}
+.overlay__bg--s1 {
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.75) 0%, rgba(var(--lp-tint-rgb), 0.75) 88.942%, rgba(var(--lp-tint-rgb), 0.25) 100%);
+}
+
+/* State 1 strip content */
+.overlay__s1 {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 0;
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity var(--lp-out-dur) ease, transform var(--lp-out-dur) ease;
+}
+.overlay__s1 { width: 100%; }
+/* Swipe zones (js/lobby.js onSwipe): stop the browser using vertical drags for page scroll /
+   pull-to-refresh. The tab bar still pans horizontally. */
+.overlay__s1,
+.overlay__s2 { touch-action: none; }
+.tabbar__scroll { touch-action: pan-x; }
+/* Alternating messages: the shown one sits in place, the hidden one waits below and the
+   outgoing one leaves upwards, so each swap reads as a short upward roll. */
+.s1-msg {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;   /* campaign name left, stat right (Figma 7189:52592) */
+  padding: 0 38px;                  /* clear of the ✕ (8 + 20 + 10) and the icon (10 + 20 + 8) */
+  opacity: 0;
+  transition: opacity 0.4s ease;   /* messages cross-fade (user: subtler than the old roll) */
+}
+.s1-msg.is-shown { opacity: 1; }
+.s1-msg--hint { justify-content: center; }
+.s1-msg > span {
+  font-size: 14px;
+  font-weight: 300;   /* Figma Light 14 */
+  line-height: 0.711;
+  white-space: nowrap;
+}
+.s1-msg__stat strong { font-weight: inherit; }
+/* Promo photo fading in towards the bottom of the strip (Figma mask 7189:52597: 0 at 25% → 75% at the bottom) */
+.s1-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 25%, rgba(0, 0, 0, 0.75) 99.52%);
+  mask-image: linear-gradient(to bottom, transparent 25%, rgba(0, 0, 0, 0.75) 99.52%);
+}
+.s1-bg img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.overlay__s1[data-promo="rb"] .s1-bg [data-promo="rb"],
+.overlay__s1[data-promo="zgt"] .s1-bg [data-promo="zgt"] { opacity: 1; }
+.overlay__s1-icon {
+  position: absolute;
+  right: 8px;   /* Figma moved it to the right (7188:52297) */
+  top: 4px;
+  width: 20px;
+  height: 20px;
+}
+
+/* State 1 hide button: the 20px ✕ at the strip's left (Figma 7188:52202) → State 0 */
+.overlay__s1-hide,
+.overlay__s0 {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  width: 38px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity var(--lp-out-dur) ease, transform var(--lp-out-dur) ease;
+}
+.overlay__s1-hide img,
+.overlay__s0 img { display: block; }
+.overlay__s1-hide { width: 36px; }   /* 8px padding either side of the ✕, as in Figma */
+.screen[data-lp-state="1"] .overlay__s1-hide,
+.screen[data-lp-state="0"] .overlay__s0 { opacity: 1; transform: none; }
+
+/* State 2 banner content (Figma Launchpad_Stage2, 394×62) */
+.overlay__bg--s2 {
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.75) 0%, rgba(var(--lp-tint-rgb), 0.75) 49.519%, rgba(var(--lp-tint-rgb), 0) 100%);
+}
+.overlay__s2 {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  width: 394px;
+  height: 62px;
+  opacity: 0;
+  transform: translateY(-14px);
+  transition: opacity var(--lp-out-dur) ease, transform var(--lp-out-dur) ease;
+}
+.overlay__s2 > * { position: absolute; }
+/* Promo photo fading out to the right (Figma mask: 75% → 0 at the middle; inlined, file:// blocks SVG masks) */
+.s2-bg {
+  inset: 0;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, rgba(0, 0, 0, 0.75), transparent 50%);
+  mask-image: linear-gradient(to right, rgba(0, 0, 0, 0.75), transparent 50%);
+}
+.s2-bg img { width: 100%; height: 100%; object-fit: cover; }
+/* Win glow (Figma winBG 7188:52450): gold at the centre, faded in by the "Grant Ticket" trigger */
+.s2-win {
+  inset: 0;
+  background: linear-gradient(to right, rgba(255, 230, 162, 0), var(--accent-1-mid) 49.519%, rgba(247, 220, 146, 0));
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.overlay__s2.is-winning .s2-win { opacity: 1; }
+.s2-row {
+  inset: 0;
+  display: flex;
+  align-items: center;
+  gap: 21px;
+  padding: 0 22px;
+}
+.s2-logo { position: relative; flex: none; width: 59px; height: 59px; }
+.s2-logo img { position: absolute; top: 13.68%; left: 1.35%; width: 97.36%; height: 72.93%; }
+.s2-info {
+  flex: 1 0 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--white);
+  white-space: nowrap;
+}
+.s2-info strong { font-size: 36px; font-weight: 500; line-height: 0.711; }
+.s2-info span { font-size: 12px; font-weight: 700; line-height: 0.711; }
+.s2-icon { flex: none; width: 42px; height: 42px; margin: 0 2.5px; overflow: hidden; }
+.s2-fx { inset: 0; pointer-events: none; }
+
+/* State 3 content: fixed to the State 3 size (game area − 12px) and centred, so it keeps its
+   layout while the overlay shrinks around it; it slides up + fades when leaving State 3. */
+.overlay__s3 {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  z-index: 1;
+  width: 100cqw;
+  height: calc(100cqh - 12px);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 16px;   /* room above the cards now that the header row is gone */
+  opacity: 0;
+  transform: translate(-50%, -24px);
+  transition: opacity calc(var(--lp-out-dur) * 1.3) ease, transform calc(var(--lp-out-dur) * 2) var(--lp-ease);
+}
+
+/* --- State 3 --- */
+.screen[data-lp-state="3"] .overlay__bg--s3 { opacity: 1; }
+.screen[data-lp-state="3"] .overlay__s3 {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* --- State 1 --- */
+.screen[data-lp-state="1"] .overlay {
+  left: 4px;
+  right: 4px;
+  height: 28px;
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+.screen[data-lp-state="1"] .overlay__bg--s1 { opacity: 1; }
+.screen[data-lp-state="1"] .overlay__s1 {
+  opacity: 1;
+  transform: none;
+}
+
+/* --- State 0, Dropdown Hidden (Figma Launchpad_Hidden 5908:195965): 38×28 tab, inset 4px --- */
+.screen[data-lp-state="0"] .overlay {
+  left: 4px;
+  right: calc(100% - 42px);
+  height: 28px;
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+.overlay__bg--s0 {
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.5) 0%, rgba(var(--lp-tint-rgb), 0.5) 49.519%, rgba(var(--lp-tint-rgb), 0) 100%);
+}
+.screen[data-lp-state="0"] .overlay__bg--s0 { opacity: 1; }
+/* No LaunchpadReservedSpace while hidden: the game moves up into the freed 26px */
+.screen[data-lp-state="0"] .game-area__game,
+.screen.lp-no-reserve .game-area__game { top: 0; height: 100%; }   /* also State 2 popped in from Hidden (js grantTicket) */
+.screen.is-ready .game-area__game { transition: top var(--lp-dur, 0.2s) ease, height var(--lp-dur, 0.2s) ease; }
+
+/* --- State 2 (62px banner, inset 4px, 36px bottom radius) --- */
+.screen[data-lp-state="2"] .overlay {
+  left: 4px;
+  right: 4px;
+  height: 62px;
+  border-radius: 0 0 36px 36px;
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+.screen[data-lp-state="2"] .overlay__bg--s2 { opacity: 1; }
+.screen[data-lp-state="2"] .overlay__s2 {
+  opacity: 1;
+  transform: none;
+}
+
+/* --- Floating type: Small + Hidden (Figma "launchpad Floating" 7181:18029) ---
+   The overlay itself becomes the floating pill (58px tall, 5px from the game area top: container
+   y 1 + 4px padding). Small = 184px wide (Figma 7188:52129), inset 4px, 12px radius. Hidden sits where Small is, flush
+   left, chevron only (20px), right corners rounded. Same gradient as State 2; stroke is accent_1-dark. */
+.screen[data-lp-state="small"] .overlay,
+.screen[data-lp-state="hidden"] .overlay {
+  top: 5px;
+  left: 4px;
+  right: calc(100% - 188px);
+  height: 58px;
+  border-radius: 12px;
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+.screen[data-lp-state="hidden"] .overlay {
+  left: 0;
+  right: calc(100% - 20px);
+  border-radius: 0 12px 12px 0;
+}
+.screen[data-lp-state="small"] .overlay::after,
+.screen[data-lp-state="hidden"] .overlay::after { box-shadow: inset 0 -1px 0 var(--accent-1-dark); }
+.screen[data-lp-state="small"] .overlay__bg--s2,
+.screen[data-lp-state="hidden"] .overlay__bg--s2 { opacity: 1; }
+
+.overlay__fl {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity var(--lp-out-dur) ease, transform var(--lp-out-dur) ease;
+}
+.screen[data-lp-state="small"] .overlay__fl,
+.screen[data-lp-state="hidden"] .overlay__fl { opacity: 1; transform: none; }
+/* Full retracting to the top (js/lobby.js retractToTop): pill look + content stay hidden until it's done */
+.screen.lp-pill-wait .overlay__fl,
+.screen.lp-pill-wait .overlay__bg--s2 { opacity: 0; transition: none; }
+.screen.lp-pill-wait .overlay::after { box-shadow: none; }
+.overlay__fl button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.fl-toggle {
+  position: relative;
+  flex: none;
+  width: 20px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.fl-toggle__chevron {
+  display: block;
+  width: 20px;
+  height: 20px;
+  transition: transform var(--lp-dur) var(--lp-ease);
+}
+.screen[data-lp-state="hidden"] .fl-toggle { filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25)); }
+/* Hidden: tap area twice the 20px tab (user request), reaching past the pill to the right. The
+   overlay stops clipping so the extension can take taps; Small's content is dropped at once so
+   nothing shows outside the shrinking pill. */
+.screen[data-lp-state="hidden"]:not(.lp-pill-wait) .overlay { overflow: visible; }
+.screen[data-lp-state="hidden"] .overlay__fl { pointer-events: none; }   /* only the toggle takes taps */
+.screen[data-lp-state="hidden"] .fl-toggle { pointer-events: auto; }
+.screen[data-lp-state="hidden"] .fl-toggle::before {
+  content: "";
+  position: absolute;
+  inset: 0 -20px 0 0;
+}
+.screen[data-lp-state="hidden"] .fl-toggle__chevron { transform: rotate(180deg); }   /* Figma swaps to "Icon - Chevron Right" */
+.fl-toggle__divider {
+  position: absolute;
+  top: 3.5px;
+  right: -2.5px;
+  transition: opacity var(--lp-dur) var(--lp-ease);
+}
+.screen[data-lp-state="hidden"] .fl-toggle__divider { opacity: 0; transition: none; }
+.overlay__fl .fl-open {
+  position: relative;   /* paints above .fl-bg */
+  flex: none;
+  height: 57px;   /* Figma promo_Info 7188:52137: 4px padding, 49px items, 2px gaps */
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  transition: opacity var(--lp-dur) var(--lp-ease);
+}
+.screen[data-lp-state="hidden"] .fl-open { opacity: 0; transition: none; }
+.fl-open__logo {
+  position: relative;
+  flex: none;
+  width: 49px;
+  height: 49px;
+}
+.fl-open__logo img {
+  position: absolute;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.fl-open__logo-rb { top: 13.68%; left: 1.35%; width: 97.36%; height: 72.93%; }
+.fl-open__logo-zgt { inset: 0; width: 100%; height: 100%; object-fit: contain; }   /* square art; no Figma frame for it yet */
+
+/* Promo background + logo follow the shown summary's promo (data-promo on .overlay__fl) */
+.fl-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 173px;
+  height: 58px;
+  pointer-events: none;
+  /* Figma mask (horizontal alpha fade), inlined because file:// blocks SVG mask URLs */
+  -webkit-mask-image: linear-gradient(to right, transparent 5.28%, rgba(0, 0, 0, 0.75) 27.1%, transparent 100%);
+  mask-image: linear-gradient(to right, transparent 5.28%, rgba(0, 0, 0, 0.75) 27.1%, transparent 100%);
+  transition: opacity var(--lp-dur) var(--lp-ease);
+}
+.fl-bg img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.overlay__fl[data-promo="rb"] :is(.fl-bg, .fl-open__logo) [data-promo="rb"],
+.overlay__fl[data-promo="zgt"] :is(.fl-bg, .fl-open__logo) [data-promo="zgt"] { opacity: 1; }
+.screen[data-lp-state="hidden"] .fl-bg { opacity: 0; transition: none; }
+
+/* "Grant Ticket" trigger (js/lobby.js grantTicket): win glow + gold particles flying into the count */
+.fl-win {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 173px;
+  height: 58px;
+  pointer-events: none;
+  background: linear-gradient(to right, rgba(255, 230, 162, 0), var(--accent-1-mid));
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.overlay__fl.is-winning .fl-win { opacity: 1; }
+.fl-fx {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.fl-particle {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fffbe6 0 20%, #ffd54a 45%, rgba(255, 183, 3, 0) 72%);
+  will-change: transform, opacity;
+}
+
+/* Icon + number of each summary: cross-fade, same as the Dropdown State 1 messages */
+.fl-open__slides {
+  position: relative;
+  width: 101px;   /* icon box 49 + gap 2 + info 50 */
+  height: 49px;
+}
+.fl-slide {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.fl-slide.is-shown { opacity: 1; }
+.fl-open__icon {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  margin: 0 6.5px;   /* 36px icon centred in Figma's 49×49 "2_PromoIcon" box */
+  overflow: hidden;
+}
+.fl-open__info {
+  flex: none;
+  width: 50px;
+  height: 49px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: var(--white);
+  white-space: nowrap;
+  text-align: center;
+}
+.fl-open__info strong { font-size: 24px; font-weight: 400; line-height: 0.711; }
+.fl-open__info span { font-size: 8px; font-weight: 700; line-height: 0.711; }
+
+/* Floating has no LaunchpadReservedSpace: the game fills the whole game area (Figma Game y 0) */
+.screen[data-lp-type="floating"] .game-area__game { inset: 0; height: 100%; }
+
+/* Incoming content (any state) bounces in on the same curve as the size change */
+.screen[data-lp-state="small"] .overlay__fl,
+.screen[data-lp-state="hidden"] .overlay__fl,
+.screen[data-lp-state="0"] .overlay__s0,
+.screen[data-lp-state="1"] .overlay__s1-hide,
+.screen[data-lp-state="1"] .overlay__s1,
+.screen[data-lp-state="2"] .overlay__s2,
+.screen[data-lp-state="3"] .overlay__s3 {
+  transition:
+    opacity calc(var(--lp-in-dur) * 0.5) ease var(--lp-in-delay),
+    transform var(--lp-in-dur) var(--lp-bounce) var(--lp-in-delay);
+}
+
+/* ---------- Card title bar (Figma "Title and Close" 7171:6570) ----------
+   First row of every card (added by js/lobby.js from the card's data-title). Figma puts it inside Main;
+   here it sits above the card body so it stays visible (with its ✕) while a section is open. The ✕
+   sits at the left edge, outside the flow; the 24px side padding keeps the centred title clear of it. */
+.card-title {
+  position: relative;
+  flex: none;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  padding: 6px 24px;
+  border-radius: 4px 4px 0 0;
+  background: var(--accent-1-dark);
+}
+.card-title__close {
+  position: absolute;
+  top: 6px;
+  left: 8px;
+  z-index: 1;
+  width: 16px;
+  height: 16px;
+}
+.card-title__close::before { content: ""; position: absolute; inset: -6px -8px; }   /* bigger tap target */
+.card-title__close img { width: 16px; height: 16px; }
+/* Title: centred when it fits. Longer titles (.is-overflowing, js/lobby.js) get feathered edges and
+   slowly scroll. Vertical padding (cancelled by the negative margin) keeps the cap-height-trimmed glyphs
+   from being clipped. */
+.card-title__text {
+  flex: 1 0 0;
+  min-width: 0;
+  margin: -8px 0;
+  padding: 8px 0;
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 500;   /* Figma Bold 14; lighter on request */
+  text-align: center;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.card-title__inner { display: inline-block; }
+.card-title__text.is-overflowing {
+  text-align: left;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 16px, #000 calc(100% - 16px), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 16px, #000 calc(100% - 16px), transparent);
+}
+/* Padding keeps the first/last letter clear of the feather at each end of the scroll */
+.card-title__text.is-overflowing .card-title__inner { padding: 0 16px; }
+
+/* 682 with jackpot, 750 without (the Figma header row was removed). Side padding lives on .promo-list. */
+.overlay__content {
+  flex: 1 0 0;
+  min-height: 0;
+}
+
+/* ---------- Promo card ---------- */
+.promo-card {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 4px;
+  /* Figma "Promo Card - Raffles": blur 18, black 75%, 2px accent_1-dark stroke, 8px radius. */
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.75);
+}
+/* The stroke is an inset shadow (takes no layout space: Main 524 + 4×30 + 8 = 652) on an overlay, so
+   the docked card can mask a gap in it where the selected tab joins (.is-docked, css below). */
+.promo-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 2px var(--accent-1-dark);
+  pointer-events: none;
+}
+
+/* Panels: Main + the four sections. Exactly one is open and fills the free space;
+   the rest collapse to 0 height (Figma: 0.0001px with content clipped). */
+.promo-main,
+.promo-section {
+  flex: 0 0 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.promo-main.is-open,
+.promo-section.is-open { flex-grow: 1; }
+
+.promo-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+/* Children keep their open size while Main collapses, as in Figma */
+.promo-main > * { flex-shrink: 0; }
+
+.promo-section.is-open { padding: 16px; }
+
+/* ---------- Swap Tickets section (Figma 5908:196017) ---------- */
+.swap {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.swap__count {
+  flex: none;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px;
+  border-radius: 8px;
+  background: var(--transp-glass);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 0.711;
+  white-space: nowrap;
+}
+.swap__count strong { color: var(--accent-1-mid); }
+
+.swap__scroll {
+  flex: 1 0 0;
+  min-height: 0;
+  display: flex;
+  gap: 7px;
+}
+/* Scrolling list: native scroll, native scrollbar hidden (custom one alongside).
+   Top/bottom fade = assets/swap-list-mask.svg, inlined because file:// blocks SVG mask URLs. */
+.swap__list {
+  flex: none;
+  width: 331px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;   /* vertical only: horizontal swipes pass through to the card carousel */
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 5%, #000 95%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 5%, #000 95%, transparent 100%);
+}
+.swap__list::-webkit-scrollbar { display: none; }
+
+.scrollbar {
+  position: relative;
+  flex: none;
+  width: 8px;
+  height: 100%;
+  border-radius: 100px;
+  background: var(--glass);
+}
+.scrollbar__handle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 67px;
+  border-top: 1px solid rgba(255, 255, 255, 0);
+  border-radius: 100px;
+  background: var(--lp-scroll);   /* theme colour, see css/tokens.css */
+  box-shadow: 0 4px 4px 2px rgba(0, 0, 0, 0.25);
+}
+
+/* TicketSwap card */
+.ticket-swap {
+  flex: none;
+  width: 330px;
+  margin-left: 0.5px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 16px 36px;
+  border: 1px solid var(--accent-2-mid);
+  border-radius: 16px;
+  overflow: hidden;
+}
+.ticket-swap.is-disabled { opacity: 0.5; }
+.ticket-swap__info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 24px;
+}
+.ticket-swap__slot {
+  position: relative;
+  flex: none;
+  width: 80px;
+  height: 80px;
+}
+.ticket-swap__icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 66px;
+  height: 66px;
+  transform: translate(-50%, -50%);
+  overflow: hidden;
+}
+.ticket-swap__text {
+  position: absolute;
+  top: 80px;
+  left: calc(50% + 0.1px);
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding-top: 4px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.ticket-swap__text strong { font-size: 14px; line-height: 0.711; }
+.ticket-swap__text small { font-size: 8px; line-height: 0.711; color: rgba(170, 170, 170, 0.6); }
+.ticket-swap__swap { flex: none; width: 26px; height: 26px; }
+.ticket-swap__remaining {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 0.711;
+  color: var(--accent-1-mid);
+  white-space: nowrap;
+}
+.btn--disabled {
+  background: var(--gray-mid);
+  border-top: 1px solid var(--transp-white-0);
+  color: var(--neutral);
+}
+
+/* Shared icon framing (insets from the Figma icon components) */
+.ico { display: block; position: relative; overflow: hidden; }
+.ico.ticket-swap__icon { position: absolute; }
+.ico > img { position: absolute; }
+.ico--raffles > img { inset: 0; width: 100%; height: 100%; }
+.ico--coins > img { top: -15.63%; left: -15.63%; width: 131.26%; height: 131.26%; }
+.ico--free > img { top: 0; left: -0.07%; width: 99.65%; height: 97%; }
+.ico--medal > img { top: 0; left: -0.5%; width: 100%; height: 100%; }   /* Figma inset 0 0.5% 0 -0.5% */
+
+/* History */
+.swap-divider {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 4px 0;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 0.711;
+}
+.swap-divider::before,
+.swap-divider::after {
+  content: "";
+  flex: 1 0 0;
+  height: 1px;
+  background: var(--transp-white-50);
+}
+.swap-history {
+  flex: none;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px;
+  border-radius: 8px;
+  background: var(--transp-glass);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.swap-history__name { display: flex; align-items: center; gap: 10px; }
+.swap-history .ico { flex: none; width: 30px; height: 30px; }
+.swap-history span { line-height: 0.711; }
+
+/* ---------- Prizes section (Figma 5908:196046) ---------- */
+.prizes {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;          /* fits as designed; scrolls if the card gets short (Jackpot + Safari on) */
+  scrollbar-width: none;
+  font-size: 14px;
+  font-weight: 300;
+  white-space: nowrap;
+}
+.prizes::-webkit-scrollbar { display: none; }
+.prizes span { line-height: 0.711; }
+.prizes__labels,
+.prize-row {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 8px;
+}
+.prizes__labels { padding: 8px 12px; }
+.prize-row {
+  padding: 12px;
+  background: var(--transp-glass);
+}
+.prize-row.is-unavailable {
+  background: var(--transp-black-25);
+  color: var(--transp-white-50);
+}
+
+/* ---------- Main Attraction (Figma 7171:6566 / 5928:307359) ---------- */
+.main-attraction {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px;
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
+}
+.main-attraction span { font-size: 18px; line-height: 0.711; }
+.main-attraction strong { font-size: 28px; line-height: 0.711; color: var(--accent-1-mid); }
+
+/* ---------- Prize Drops card: Winners section (Figma 5928:307381) ---------- */
+.winners {
+  height: 100%;
+  display: flex;
+  gap: 8px;
+}
+.winners__col {
+  flex: 1 0 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 300;
+  white-space: nowrap;
+}
+.winners__col span { line-height: 0.711; }
+/* Fade top + bottom (same as Swap Tickets list), inlined: file:// blocks SVG mask URLs */
+.winners__list {
+  flex: 1 0 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;   /* vertical only: horizontal swipes pass through to the card carousel */
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 5%, #000 95%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 5%, #000 95%, transparent 100%);
+}
+.winners__list::-webkit-scrollbar { display: none; }
+.winner-row {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2px;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--transp-glass);
+}
+/* Tournament Leaderboard: rank (54px) | player (fills) | prize */
+.winners--ranked .prizes__labels > :first-child,
+.winners--ranked .winner-row > :first-child { flex: none; width: 54px; }
+.winners--ranked .prizes__labels > :nth-child(2),
+.winners--ranked .winner-row > :nth-child(2) { flex: 1 0 0; min-width: 0; }
+.winner-row.is-me {
+  background: var(--accent-1-mid);
+  color: var(--black);
+}
+
+/* ---------- Jackpots card (Figma "Jackpot Card" 5935:309180) ----------
+   Vertical list of jackpot sections. Bottom fade over 10% (Figma: 5%, doubled per review); a
+   mirrored top fade appears only once the list is scrolled (.is-scrolled, js/lobby.js). */
+.jackpots {
+  flex: 1 0 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;   /* vertical only: horizontal swipes pass through to the card carousel */
+  scrollbar-width: none;
+  border-radius: 4px;
+  --fade-top: 0%;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 var(--fade-top), #000 90%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 var(--fade-top), #000 90%, transparent 100%);
+}
+.jackpots.is-scrolled { --fade-top: 10%; }
+.jackpots::-webkit-scrollbar { display: none; }
+
+.jp {
+  position: relative;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-bottom: 12px;
+  overflow: hidden;
+}
+.jp__bg { position: absolute; inset: 0; }
+.jp--jm .jp__bg {
+  background:
+    linear-gradient(to bottom, rgba(46, 46, 46, 0.19), rgba(0, 0, 0, 0.63) 58.654%),
+    url("../assets/jackpots/jm-bg.jpg") center / cover;
+}
+.jp--km .jp__bg {
+  background:
+    linear-gradient(to bottom, rgba(112, 0, 118, 0.21), #a900b2),
+    url("../assets/jackpots/km-bg.jpg") center / cover,
+    var(--glass);
+}
+.jp--mm .jp__bg {
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.62), rgba(0, 0, 0, 0.62)),
+    linear-gradient(to top, #ff0000, #4bb521),
+    var(--glass);
+}
+.jp--lol .jp__bg {
+  background:
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.38), #000),
+    url("../assets/jackpots/lol-bg-tile.png") top left / 59px 59.5px repeat;
+}
+
+.jp__head {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 4px;
+}
+.jp--km .jp__head { height: 184px; }
+.jp__logo { width: 100%; height: 56px; object-fit: contain; }
+.jp--jm .jp__logo { height: 76px; }
+.jp--km .jp__logo { flex: 1 0 0; min-height: 0; height: auto; }
+
+/* Ticker: label + amount, then a progress bar. JM tickers are padded colour-washed cards;
+   the others are plain rows (some with 83px right padding, as in Figma). */
+.jp-ticker {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 0 8px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.jp-ticker--narrow { padding-right: 83px; }
+.jp-ticker--card {
+  padding: 8px;
+  border-radius: 4px;
+  background: linear-gradient(to right, var(--wash), transparent);
+}
+.jp-ticker__row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.jp-ticker__label { font-size: 14px; font-weight: 700; line-height: 0.711; color: var(--accent-1-bright); }
+.jp-ticker__value { font-size: 16px; font-weight: 800; line-height: 0.711; }
+.jp-ticker--big .jp-ticker__value { font-size: 24px; }
+.jp-bar {
+  position: relative;
+  flex: none;
+  display: flex;
+  align-items: center;
+  padding: 2px;
+  border: 1px solid var(--accent-1-mid);
+  border-radius: 100px;
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)),
+    linear-gradient(to bottom, var(--accent-1-dark), var(--accent-1-bright));
+}
+.jp-bar--img { background: linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), var(--bar-img) center / cover, linear-gradient(to bottom, var(--accent-1-dark), var(--accent-1-bright)); }
+.jp-bar__fill {
+  height: 12px;
+  border-radius: 100px;
+  background: linear-gradient(to bottom, var(--accent-1-bright), var(--accent-1-dark));
+  box-shadow: 1px 0 1px rgba(0, 0, 0, 0.25);
+}
+.jp-bar__icon { position: absolute; right: -8.5px; top: -30.33px; width: 40px; height: 40px; object-fit: contain; }
+.jp-ticker:has(.jp-bar__icon) { overflow: visible; }
+
+/* "Curated Games for you" row: horizontal scroller with faded side edges
+   (masks/mask - fade horiz both sides, inlined) */
+.jp-games { position: relative; display: flex; flex-direction: column; gap: 4px; }
+.jp-games__title {
+  margin: 0;
+  padding: 8px 16px 8px 32px;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 0.711;
+}
+.jp-games__list {
+  display: flex;
+  gap: 12px;
+  padding: 8px 12px 12px;
+  margin: -8px 0 -12px;   /* room for tile shadows without changing layout */
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  touch-action: pan-x pan-y;
+  -webkit-mask-image: linear-gradient(to right, transparent 1%, #000 4%, #000 96%, transparent 99%);
+  mask-image: linear-gradient(to right, transparent 1%, #000 4%, #000 96%, transparent 99%);
+}
+.jp-games__list::-webkit-scrollbar { display: none; }
+.jp-games__list > .game-tile { flex: none; }
+
+/* ---------- Games section (Figma GameListGrid 5908:196059) ----------
+   3 columns of 112.658px cells (100px tiles centred), 8px / 12px gaps. The grid is ~354px wide in
+   a 346px section, so it's centred and overflows 4px each side, as in Figma.
+   Top/bottom fade = assets/games-grid-mask.svg, inlined because file:// blocks SVG mask URLs. */
+.games-grid {
+  height: 100%;
+  margin: 0 -4px;
+  display: grid;
+  grid-template-columns: repeat(3, 112.658px);
+  justify-content: center;
+  align-content: start;
+  gap: 12px 8px;
+  padding: 8px 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;   /* vertical only: horizontal swipes pass through to the card carousel */
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 5%, #000 95%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 5%, #000 95%, transparent 100%);
+}
+.games-grid::-webkit-scrollbar { display: none; }
+
+.game-tile {
+  position: relative;
+  justify-self: center;
+  width: 100px;
+  height: 160px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 2px 0;
+  border-top: 2px solid var(--transp-white-0);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 4px 2px rgba(0, 0, 0, 0.25);
+}
+.game-tile__bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 16px;
+}
+.game-tile__logo {
+  position: relative;
+  flex: 1 0 0;
+  min-height: 0;
+  width: 100%;
+  object-fit: contain;
+}
+.game-tile__info {
+  position: relative;
+  flex: none;
+  width: 100%;
+  padding: 0 12px;
+}
+.game-tile__bar {
+  height: 16px;
+  display: flex;
+  align-items: center;
+  border-radius: 6px 6px 0 0;
+  background: var(--black);
+  overflow: hidden;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.game-tile__bar > span {
+  flex: 1 0 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  line-height: 0.711;
+}
+.game-tile__bar .icon-user { width: 9.999px; height: 9.998px; }
+.game-tile__divider {
+  position: relative;
+  flex: none;
+  width: 0;
+  height: 14px;
+}
+.game-tile__divider img {
+  position: absolute;
+  top: 7px;
+  left: -7px;
+  width: 14px;
+  height: 1px;
+  transform: rotate(90deg);
+}
+
+/* ---------- Rules section (Figma 5908:196061) ---------- */
+.rules {
+  height: 100%;
+  display: flex;
+  gap: 8px;
+}
+/* Bottom-only fade = assets/rules-mask.svg, inlined because file:// blocks SVG mask URLs */
+.rules__list {
+  flex: 1 0 0;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;   /* vertical only: horizontal swipes pass through to the card carousel */
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to bottom, #000 95%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 95%, transparent 100%);
+  font-size: 14px;
+  font-weight: 300;
+  color: #efefd0;
+}
+.rules__list::-webkit-scrollbar { display: none; }
+.rules__list > * { flex: none; }
+.rules__heading {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 0.711;
+  color: var(--accent-strong);
+}
+.rules__row {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+}
+.rules__icon { flex: none; width: 100px; height: 100px; }
+.rules__box {
+  flex: 1 0 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 8px;
+  border-radius: 8px;
+  background: var(--glass);
+  line-height: normal;
+}
+.rules__box--wide { height: 80px; }
+.rules__body { line-height: normal; }
+.rules__body p,
+.rules__body ol { margin: 0; }
+.rules__body ol { padding-left: 21px; }
+
+/* Accordion animation: the closing and opening panels trade flex-grow (0 ↔ 1) at the same time,
+   so the total height stays constant and the handles slide between them. Short, snappy ease-out. */
+.promo-card {
+  --acc-dur: 0.18s;
+  --acc-ease: cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+.screen.is-ready .promo-main,
+.screen.is-ready .promo-section {
+  transition: flex-grow var(--acc-dur) var(--acc-ease), padding var(--acc-dur) var(--acc-ease);
+}
+/* Main's content fades as it collapses, and back in as it reopens */
+.promo-main > * { transition: opacity var(--acc-dur) ease; }
+.promo-main:not(.is-open) > * { opacity: 0; }
+
+/* Short-card fallback (Raffles, Tournament, Prize Drops). .promo-card__body holds Main, the handles
+   and the sections and normally lays them out exactly like the card itself. With .is-flow (card shorter
+   than data-flow-below, js/lobby.js) the open panel takes its full content height, the inner
+   lists stop scrolling on their own, and the whole body scrolls instead — like the Jackpots card.
+   Fades top/bottom only while content is hidden past that edge. */
+.promo-card__body {
+  position: relative;          /* offsetParent for scroll-to-section */
+  flex: 1 0 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-radius: 4px;
+}
+.promo-card__body.is-flow {
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;   /* vertical only: horizontal swipes pass through to the card carousel */
+  scrollbar-width: none;
+  --fade-top: 0%;
+  --fade-bottom: 100%;
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 var(--fade-top), #000 var(--fade-bottom), transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 var(--fade-top), #000 var(--fade-bottom), transparent 100%);
+}
+.promo-card__body.is-flow::-webkit-scrollbar { display: none; }
+.promo-card__body.is-flow.is-scrolled { --fade-top: 10%; }
+.promo-card__body.is-flow.has-more { --fade-bottom: 90%; }
+/* The open section's handle pins to the top while its content scrolls (no top fade over it) */
+.promo-card__body.is-flow > .info-handle.is-open { position: sticky; top: 0; z-index: 1; }
+.promo-card__body.is-flow:has(> .info-handle.is-open) { --fade-top: 0%; }
+/* Panels: closed = 0, open = content height; heights animate in JS, so no CSS transitions here */
+.promo-card__body.is-flow > .promo-main,
+.promo-card__body.is-flow > .promo-section {
+  flex: none;
+  height: 0;
+  transition: none;
+}
+.promo-card__body.is-flow > .is-open { height: auto; }
+.promo-card__body.is-flow .promo-banner { flex: none; height: 321px; }   /* Figma 389 − the 68px Jackpot bar */
+/* Inner lists show everything; their own scrollbars and edge fades go away */
+.promo-card__body.is-flow :is(.swap, .swap__scroll, .swap__list, .prizes, .winners, .winners__list, .games-grid, .rules, .rules__list) {
+  flex: none;
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+.promo-card__body.is-flow .winners__col { flex: 1 0 0; }
+.promo-card__body.is-flow .rules__list { flex: 1 0 0; }
+.promo-card__body.is-flow .scrollbar { display: none; }
+
+/* Banner takes Main's spare height: 302 with jackpot, 370 without */
+.promo-banner {
+  position: relative;
+  flex: 1 0 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2px;
+}
+.promo-banner__bg {
+  position: absolute;
+  inset: 0;
+  /* Same gradient as assets/promo-banner-mask.svg — inlined because file:// blocks SVG mask URLs */
+  -webkit-mask-image: linear-gradient(to bottom, #000 30.2885%, transparent 96.6346%);
+  mask-image: linear-gradient(to bottom, #000 30.2885%, transparent 96.6346%);
+}
+.promo-banner__bg img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.promo-banner__fg {
+  position: relative;
+  flex: 1 0 0;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 32px;
+}
+.promo-banner__logo {
+  flex: 1 0 0;
+  min-width: 0;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Themed static icons (js/tab-icons.js fills them with the tab icon art): State 1 + 2.
+   Base style has zero specificity so each spot's own positioning (absolute in State 1 / 2) wins. */
+:where(.theme-ico) { display: block; position: relative; }
+.theme-ico > svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+
+/* ---------- Buttons ---------- */
+.btn {
+  flex: none;
+  min-width: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 24px;
+  border-radius: 100px;
+  overflow: hidden;
+  font-size: 16px;
+  font-weight: 500;
+  text-align: center;
+  white-space: nowrap;
+}
+.btn--attention {
+  background: var(--accent-1-dark);
+  border-top: 1px solid var(--transp-white-0);
+  color: var(--accent-1-bright);
+}
+.btn--attention:hover { filter: brightness(1.1); }
+.btn--attention:active { filter: brightness(0.92); }
+.btn--info {
+  border: 1px solid var(--info-border);
+  color: var(--white);
+}
+/* "Switch game to participate" call to action (Prize Drops, not in Figma); opens the Games section
+   (data-opens, js/lobby.js) */
+.btn--notice {
+  border: 1px solid var(--white);
+  background: var(--notice);
+  color: var(--white);
+}
+/* Concluded campaign status (not in Figma): grey text + outline, from the expired Prize Drop greys */
+.btn--ended {
+  border-color: #a4a4a4;
+  color: #a4a4a4;
+}
+
+/* ---------- Banner stats row (Figma 7171:6540) ----------
+   Countdown cell on the left half; one stat (Raffles: MY TICKETS) or two (Tournament, Prize Drops —
+   not in Figma, split on request) on the right half. Outer bottom corners round to 16px. */
+.promo-stats {
+  position: relative;
+  flex: none;
+  width: 100%;
+  display: flex;
+  gap: 2px;
+}
+.promo-stats__cell {
+  flex: 1 0 0;
+  min-width: 0;
+  height: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--transp-black-50);
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
+}
+.promo-stats__cell--time {
+  flex: 0 0 calc(50% - 1px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+  border-bottom-left-radius: 16px;
+}
+.promo-stats__cell:last-child { border-bottom-right-radius: 16px; }
+.promo-stats__cell span { font-size: 12.227px; }
+.promo-stats__cell strong { font-size: 21.61px; color: var(--accent-1-mid); }
+/* Two stats sharing the right half: smaller type so the values fit */
+.promo-stats__cell:nth-child(3) span,
+.promo-stats__cell:nth-child(2):not(:last-child) span { font-size: 9px; }
+.promo-stats__cell:nth-child(3) strong,
+.promo-stats__cell:nth-child(2):not(:last-child) strong { font-size: 16px; }
+
+/* ---------- Countdown (Figma "Coountdown" 7171:6543) ---------- */
+.countdown {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5.4px;
+  padding: 0 5.4px;
+}
+.countdown__digits { display: flex; align-items: center; justify-content: center; }
+.countdown__digits span {
+  font-size: 21.614px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+.countdown__sep {
+  width: 4.73px;
+  display: flex;
+  flex-direction: column;
+  gap: 2.03px;
+  padding: 0.675px;
+}
+.countdown__sep img { width: 3.38px; height: 3.38px; }
+.countdown__ends {
+  margin: 0;
+  font-size: 8.105px;
+  font-weight: 700;
+  color: var(--accent-2-light);
+}
+
+/* ---------- Main info (Figma "info" 7171:6581): main attraction + buttons under the banner ---------- */
+.promo-info {
+  flex: none;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 0;
+}
+
+/* ---------- Accordion handles ----------
+   Base is accent_2-dark (green when its section is open) with a white tint that steps
+   down the stack (21% → 14% → 7% → none). Corners: 4px, except 16px on the side
+   that touches the open panel — set by js/lobby.js via .is-open / .is-after-open. */
+.info-handle {
+  --tint: 0;
+  --base: var(--lp-section);   /* theme colour, see css/tokens.css */
+  flex: none;
+  width: 100%;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  overflow: hidden;
+  border-radius: 4px;
+  /* "highlight - top" / "highlight - bottom": 1px strokes fading out to the left and right edges
+     (grad - white fade horiz = transp white 0% → 50% → 0%; the black fade's stops aren't exposed
+     by the MCP, so it mirrors the white one at 50% black) */
+  background:
+    linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent) top / 100% 1px no-repeat,
+    linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.5), transparent) bottom / 100% 1px no-repeat,
+    linear-gradient(rgba(255, 255, 255, var(--tint)), rgba(255, 255, 255, var(--tint))),
+    var(--base);
+  font-size: 14px;
+  font-weight: 700;
+}
+.info-handle.is-open { --base: var(--section-handle-open); border-bottom-left-radius: 16px; border-bottom-right-radius: 16px; }
+.info-handle.is-after-open { border-top-left-radius: 16px; border-top-right-radius: 16px; }
+/* Tint steps by position in the card (any card): 1st 21%, 2nd 14%, 3rd 7%, 4th none */
+:is(.promo-card, .promo-card__body) > .info-handle:nth-of-type(1) { --tint: 0.21; }
+:is(.promo-card, .promo-card__body) > .info-handle:nth-of-type(2) { --tint: 0.14; }
+:is(.promo-card, .promo-card__body) > .info-handle:nth-of-type(3) { --tint: 0.07; }
+:is(.promo-card, .promo-card__body) > .info-handle:nth-of-type(4) { --tint: 0; }
+/* Base colour (blue ↔ green) and corners animate with the panels */
+@property --base {
+  syntax: "<color>";
+  inherits: false;
+  initial-value: #003b7d;
+}
+.screen.is-ready .info-handle {
+  transition:
+    --base var(--acc-dur) ease,
+    border-radius var(--acc-dur) var(--acc-ease),
+    filter 0.12s ease;
+}
+.info-handle:hover { filter: brightness(1.12); }
+.info-handle img { width: 26px; height: 26px; }
+
+/* ---------- Tab bar (Frame 11) ----------
+   Bottom of State 3. Figma has a 52px bar above a 26px balance footer; the footer was removed on
+   request and the bar took its height (--tabbar-h). Tabs sit --tab-lift above its centre line. */
+.tabbar {
+  flex: none;
+  position: relative;
+  height: var(--tabbar-h);
+}
+/* The strip overhangs the bar by 16px top and bottom (raised by --tab-lift) so the selected icon's glow,
+   sparkles and the prize box lid have room; it clips vertically because it scrolls sideways. Only the
+   tabs take pointer events, so the overhang doesn't block the card above. */
+.tabbar__scroll {
+  position: absolute;
+  top: calc(-16px - var(--tab-lift));
+  left: 0;
+  width: 402px;
+  height: calc(100% + 32px);
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  /* Carousel (js/lobby.js tabCards): the selected tab snaps to the centre, under its card. Half a
+     strip of padding each side lets the first and last tabs reach the centre too. */
+  padding: 0 calc(50% - 31px);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  /* Same gradient as assets/tabbar-mask.svg — inlined because file:// blocks SVG mask URLs */
+  -webkit-mask-image: linear-gradient(to right, transparent 1%, #000 4%, #000 96%, transparent 99%);
+  mask-image: linear-gradient(to right, transparent 1%, #000 4%, #000 96%, transparent 99%);
+}
+.tabbar__scroll::-webkit-scrollbar { display: none; }
+.tabbar__scroll.is-dragging { scroll-snap-type: none; }
+
+.tab {
+  position: relative;
+  flex: none;
+  width: 62px;
+  height: 48px;
+  pointer-events: auto;
+  scroll-snap-align: center;
+  scroll-snap-stop: always;   /* one tab per swipe, like the cards */
+  transition: transform 0.18s cubic-bezier(0.2, 0.9, 0.3, 1.3);
+}
+/* Centred tab is slightly larger than the rest (not in Figma). It's the selected tab, except mid-swipe,
+   when it previews the tab the strip will land on (js/lobby.js tabCards). */
+.tab--centre { transform: scale(var(--tab-active-scale)); }
+.tab__bg {
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--tab-border);
+  border-radius: 24px;   /* = half the tab height (pill) */
+  background: rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+.tab__icon {
+  position: absolute;
+  top: 7px;
+  bottom: 7px;
+  left: 50%;
+  aspect-ratio: 1;
+  transform: translateX(-50%);
+  overflow: hidden;
+}
+.tab__icon > img { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+/* Animated SVG icons (js/tab-icons.js): art fills the 32px icon box; glow, sparkles and the box
+   lid draw outside it, so neither the icon nor the tab background clips them */
+.tab__bg:has(.tab-ico) { overflow: visible; }
+.tab-ico { overflow: visible; }
+.tab-ico__svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.tab-ico__svg .sp { fill: #fff6c8; transform-box: view-box; transform-origin: 0 0; }   /* sparkles scale around their own position */
+.tab-ico__svg :is(g, path, ellipse, circle) { transform-box: fill-box; transform-origin: center; }
+.tab-ico__svg :is([data-part="medRibA"], [data-part="medRibB"], [data-part="ribL"], [data-part="ribR"]) { transform-origin: 50% 100%; }
+.tab-ico__svg :is([data-part="lidRibL"], [data-part="lidRibR"]) { transform-origin: 50% 0%; }
+.tab-ico__svg [data-part="reel"] { transform-box: view-box; }
+/* Free Games grows around the icon centre: its bounding box includes the clipped reel stack, whose
+   centre moves while the reel spins, which made the icon drift up and snap back */
+.tab-ico__svg [data-part="fgAll"] { transform-box: view-box; transform-origin: 50px 50px; }
+/* Icon colours: each --ico-* falls back to the reference artwork's colour. The blues follow the
+   operator theme: each keeps its own OKLCH lightness + chroma and its hue is rotated by
+   --theme-hue-shift (css/tokens.css), so shading stays the same and only the hue changes. Resolved
+   once at style time — no per-frame cost. Browsers without relative colour keep the original blues.
+   Golds and ticket paper are not themed. The ended raffle uses the expired-campaign greys. */
+@supports (color: oklch(from red l c h)) {
+  /* Operator hue: outlines that follow the theme the same way (tabs, "Active & Joined") */
+  .screen {
+    --tab-border:       oklch(from #7dcfff l c calc(h + var(--theme-hue-shift)));
+    --tab-border-muted: oklch(from #7dcfff l c calc(h + var(--theme-hue-shift)) / 0.5);
+    --info-border:      oklch(from #0473b4 l c calc(h + var(--theme-hue-shift)));
+  }
+  .tab-ico,
+  .theme-ico {
+    --ico-blue:       oklch(from #0096ee l c calc(h + var(--theme-hue-shift)));
+    --ico-blue-mid:   oklch(from #0473b4 l c calc(h + var(--theme-hue-shift)));
+    --ico-blue-light: oklch(from #69caff l c calc(h + var(--theme-hue-shift)));
+    --ico-blue-deep:  oklch(from #13557e l c calc(h + var(--theme-hue-shift)));
+    --ico-inside:     oklch(from #06263f l c calc(h + var(--theme-hue-shift)));
+    --ico-inside-l:   oklch(from #0a5c8f l c calc(h + var(--theme-hue-shift)));
+    --ico-inside-r:   oklch(from #0b4a74 l c calc(h + var(--theme-hue-shift)));
+  }
+}
+.tab--ended .tab-ico,
+.theme-ico.theme-ico--ended {
+  --ico-blue: #a4a4a4;
+  --ico-blue-mid: #808080;
+  --ico-blue-light: #d9d9d9;
+  --ico-blue-deep: #6e6e6e;
+  --ico-gold: #b4b4b4;
+  --ico-gold-dark: #838383;
+  --ico-gold-light: #d9d9d9;
+  --ico-paper: #ededed;
+}
+.tab__icon--search > img { top: -15.1%; left: -15.27%; width: 115.27%; height: 115.1%; }
+.tab__icon--free > img { top: 0; left: -0.07%; width: 99.65%; height: 97%; }
+
+.tab__bg {
+  transition: background-color 0.15s ease, border-color 0.15s ease, filter 0.15s ease, translate 0.15s ease;
+}
+
+/* Icons are 32px; the selected tab's icon scales up to 52px (the Figma selected-tab size),
+   spilling past the 48px tab. The tab's own scale is divided out so the icon stays at 52px. */
+.tab__icon {
+  transform-origin: 50% 50%;
+  transition: transform 0.18s cubic-bezier(0.2, 0.9, 0.3, 1.3);
+}
+/* .is-open: set by js/tab-icons.js once the selected tab has joined its card */
+.tab__icon.is-open { transform: translateX(-50%) scale(1.625); }
+.tab--centre .tab__icon.is-open { transform: translateX(-50%) scale(calc(1.625 / var(--tab-active-scale))); }
+.tab--muted .tab__bg {
+  border-color: var(--tab-border-muted);
+  background: rgba(255, 255, 255, 0.2);
+}
+/* Selected tab (any tab; js/lobby.js moves .tab--active). After --muted so it wins. The yellow fill
+   was dropped once the animated icons brought their own glow; border + drop shadow remain. */
+.tab--active .tab__bg {
+  overflow: visible;
+  border-color: rgba(255, 226, 109, 0.5);
+  filter: drop-shadow(0 0 2px var(--accent-1-bright));
+}
+/* Docked (not in Figma): while nothing is scrolling, the selected tab joins its card. The joined shape
+   (.tab-dock, an SVG in the tab bar under the strip) hangs from the card's bottom edge: its gold outline
+   continues the card stroke through two 8px concave flares, runs down straight sides 88px apart and
+   rounds off at the bottom — wider than a tab. The tab's own pill hides meanwhile; its icon stays.
+   js/lobby.js tabCards toggles .is-docked on the tab bar and the selected card. */
+.tab-dock {
+  position: absolute;
+  top: -6px;                        /* svg y 0 = card stroke top: 4px gap above the bar + the 2px stroke */
+  left: 50%;
+  overflow: visible;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateX(-50%) scaleY(0.6);
+  transform-origin: top;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.tab-dock__fill { fill: url(#tab-dock-fill); }
+.tab-dock__line { fill: none; stroke: var(--accent-1-dark); stroke-width: 2; }
+.tabbar.is-docked .tab-dock {
+  opacity: 1;
+  transform: translateX(-50%);
+  transition-duration: 0.08s;
+}
+.tabbar.is-docked .tab--active.tab--centre .tab__bg {
+  border-color: transparent;
+  background-color: transparent;
+  filter: none;
+  transition-duration: 0.08s;
+}
+/* The shape is wider than a tab, so the tabs either side of it move out by --tab-dock-push, leaving the
+   usual 12px gap to its sides (tab half-width 31 + gap 12 = 43 → shape half-width 45 + gap 12 = 57).
+   Only the tabs' contents move: moving the .tab itself would shift its scroll-snap area, and a tap on
+   a pushed tab would then glide to the shifted spot, stop off-centre and never dock. */
+.tabbar.is-docked .tab:has(~ .tab--active.tab--centre) > * { translate: calc(-1 * var(--tab-dock-push)) 0; }
+.tabbar.is-docked .tab--active.tab--centre ~ .tab > * { translate: var(--tab-dock-push) 0; }
+/* …and the card's bottom stroke opens where the shape's outline takes over (flares included) */
+.promo-card.is-docked::after {
+  --gap: 104px;
+  -webkit-mask:
+    linear-gradient(#000 0 0) top / 100% calc(100% - 2px) no-repeat,
+    linear-gradient(to right, #000 calc(50% - var(--gap) / 2), transparent 0 calc(50% + var(--gap) / 2), #000 0) bottom / 100% 2px no-repeat;
+  mask:
+    linear-gradient(#000 0 0) top / 100% calc(100% - 2px) no-repeat,
+    linear-gradient(to right, #000 calc(50% - var(--gap) / 2), transparent 0 calc(50% + var(--gap) / 2), #000 0) bottom / 100% 2px no-repeat;
+}
+
+/* ---------- Promo card list (Figma "List") ----------
+   Cards sit side by side. Swipe (touch/trackpad) or drag (mouse, js/lobby.js) to move between
+   them; scroll-snap centres the nearest card. Tabs scroll it programmatically.
+   8px gap + 8px side padding: neighbours start exactly at the screen edge, so one card shows. */
+.promo-list {
+  height: 100%;
+  display: flex;
+  gap: 8px;
+  padding: 0 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 8px;
+  scrollbar-width: none;
+}
+.promo-list::-webkit-scrollbar { display: none; }
+.promo-list img { -webkit-user-drag: none; user-select: none; }   /* no native image drag mid-swipe */
+.promo-list.is-dragging { scroll-snap-type: none; cursor: grabbing; user-select: none; }
+.promo-list > .promo-card {
+  flex: none;
+  width: 386px;
+  scroll-snap-align: center;
+  scroll-snap-stop: always;   /* one card per swipe */
+}
+.tab__dot {
+  transition: translate 0.15s ease;
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 12px;
+  height: 12px;
+}
+
+:focus-visible { outline: 2px solid var(--accent-1-bright); outline-offset: 2px; }
+
+/* ---------- Mobile (≤ 700px wide) ----------
+   The screen is built at 402px wide throughout, so on a phone it's scaled (not reflowed) to the
+   viewport width; js/lobby.js sets --fit and an unscaled height so the scaled screen fills the
+   viewport height (the game area absorbs the difference). Prototype controls move into a
+   slide-in drawer opened by a floating ☰ button. */
+.proto-menu { display: contents; }
+.proto-menu-btn { display: none; }
+
+@media (max-width: 700px) {
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    display: block;
+    min-height: 0;
+    padding: 0;
+    background: var(--black);
+  }
+  .stage {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+  }
+  .screen {
+    transform: scale(var(--fit, 1));
+    transform-origin: 0 0;
+    box-shadow: none;
+  }
+
+  .proto-menu-btn {
+    position: fixed;
+    top: calc(8px + env(safe-area-inset-top));
+    left: calc(8px + env(safe-area-inset-left));
+    z-index: 30;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    border-radius: 10px;
+    background: rgba(26, 29, 36, 0.85);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+  }
+  .proto-menu-btn span {
+    width: 16px;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--white);
+    transition: transform 0.2s ease, opacity 0.2s ease;
+  }
+  .proto-menu-btn[aria-expanded="true"] span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+  .proto-menu-btn[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+  .proto-menu-btn[aria-expanded="true"] span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+  .proto-menu {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 20;
+    width: min(280px, 85vw);
+    display: block;
+    padding: calc(56px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom));
+    overflow-y: auto;
+    background: rgba(26, 29, 36, 0.97);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5);
+    transform: translateX(-105%);
+    transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1);
+    visibility: hidden;
+  }
+  .proto-menu.is-open { transform: none; visibility: visible; }
+  .proto-menu:not(.is-open) { transition: transform 0.25s ease, visibility 0s 0.25s; }
+  .proto-menu.is-instant { transition: none; }
+
+  .proto-menu .proto-controls,
+  .proto-menu .proto-controls--right {
+    position: static;
+    width: auto;
+    margin: 0;
+  }
+  .proto-menu .proto-controls + .proto-controls { margin-top: 24px; }
+
+  .fs-prompt {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 0;
+    border: 0;
+    background: rgba(0, 0, 0, 0.75);
+    color: var(--white);
+    font: 500 18px/1.2 Roboto, sans-serif;
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+    cursor: pointer;
+  }
+}
+.fs-prompt[hidden] { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .screen.is-ready .promo-main,
+  .screen.is-ready .promo-section,
+  .screen.is-ready .info-handle,
+  .promo-main > *,
+  .fl-slide,
+  .s1-msg,
+  .s1-bg img,
+  .fl-bg img,
+  .fl-open__logo img { transition: none; }   /* floating summaries swap instantly */
+}

@@ -1,0 +1,12 @@
+# Local secrets (organisation rule: never commit credentials)
+.env
+.env.*
+
+# Headless test copies of the page
+_t.html
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
