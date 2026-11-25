@@ -95,6 +95,15 @@
           { duration: DUR - 100, delay: 100, easing: 'ease-out' }));
       },
     },
+    trophy: {
+      glow: [50, 40], sparks: [[6, 14], [96, 10], [-4, 60], [104, 56]],
+      open(run, part) {
+        // Grows 10%, the star gives a quick twist
+        run(part('trophyG'), [{ transform: 'scale(1)' }, { transform: 'scale(1.1)' }], { duration: DUR, easing: POP });
+        run(part('trophyStar'), [{ transform: 'rotate(0deg) scale(1)' }, { transform: 'rotate(72deg) scale(1.15)' }],
+          { duration: DUR - 100, delay: 100, easing: 'ease-out' });
+      },
+    },
     box: {
       glow: [50, 50], sparks: [[18, 2], [84, -4], [6, 24], [96, 22]], sparksBefore: 'lid',
       open(run, part) {

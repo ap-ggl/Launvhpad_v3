@@ -35,7 +35,7 @@ data/                 # mock game list (JSON)
 Adjust as the project grows, and update this section when it changes.
 
 ## Animated tab icons
-- Artwork and animations come from `icons-animation.html`; icons not in it have an animation-ready source in `assets/icons/anim-src/` (Free Games). `js/tab-icons-svg.js` is generated from both — ids became `data-part`, `UID-` ids are made unique per instance, colours became `--ico-*` custom properties with the original colour as fallback. Regenerate it rather than hand-editing. `js/tab-icons.js` holds the shared glow/sparkles and each icon's open animation, triggered by `.tab--active` (same scale-up, glow and sparkles for every icon).
+- Artwork and animations come from `icons-animation.html`; icons not in it have an animation-ready source in `assets/icons/anim-src/` (Free Games; Trophy from Figma Components "Icon_Trophy" 2750:5250, which replaced the medal everywhere). `js/tab-icons-svg.js` is generated from both — ids became `data-part`, `UID-` ids are made unique per instance, colours became `--ico-*` custom properties with the original colour as fallback. Regenerate it rather than hand-editing. `js/tab-icons.js` holds the shared glow/sparkles and each icon's open animation, triggered by `.tab--active` (same scale-up, glow and sparkles for every icon).
 - Icon blues, tab outlines and the "Active & Joined" outline follow the operator theme: `--theme-hue-shift` (css/tokens.css, per `.screen[data-theme]`) rotates each blue's OKLCH hue while keeping its lightness/chroma (relative colour syntax, css/lobby.css). Golds and paper are not themed. The ended raffle tab overrides the colours with greys (`.tab--ended`).
 
 ## Lobby conventions
